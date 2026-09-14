@@ -34,9 +34,9 @@ $$("[data-nav]").forEach(b=>b.addEventListener("click",()=>navigate(b.dataset.na
 function taskHTML(t){return `<article class="task-card ${t.done?"done":""}"><button class="task-check ${t.done?"checked":""}" data-task="${t.id}" aria-label="${t.done?"Reobrir":"Completar"} ${t.title}">${t.done?"✓":""}</button><div><h3>${t.title}</h3><p>${t.meta} · ${t.who}</p></div><span class="assignee">${t.initials}</span></article>`}
 function renderTasks(){
  $("#todayTasks").innerHTML=state.tasks.filter(t=>!t.done).slice(0,3).map(taskHTML).join("")||'<p>Tot fet per avui! 🎉</p>';
- const list=state.tasks.filter(t=>taskFilter==="all"||taskFilter==="done"===t.done);
+ const list=state.tasks.filter(t=>taskFilter==="all"||(taskFilter==="done"?t.done:!t.done));
  $("#taskList").innerHTML=list.map(taskHTML).join("")||"<p>No hi ha tasques en aquesta vista.</p>";
- $$(".task-check").forEach(b=>b.onclick=()=>{const t=state.tasks.find(x=>x.id===+b.dataset.task);t.done=!t.done;save();renderTasks();toast(t.done?"Tasques completada":"Tasques reoberta")});
+ $$(".task-check").forEach(b=>b.onclick=()=>{const t=state.tasks.find(x=>x.id===+b.dataset.task);t.done=!t.done;save();renderTasks();toast(t.done?"Tasca completada":"Tasca reoberta")});
  $("#workload").innerHTML=state.members.map(m=>`<div class="load-person"><span><b>${m.name}</b><em>${m.load}%</em></span><div class="load-track"><i style="width:${m.load}%"></i></div></div>`).join("");
 }
 $$("[data-task-filter]").forEach(b=>b.onclick=()=>{taskFilter=b.dataset.taskFilter;$$("[data-task-filter]").forEach(x=>x.classList.toggle("selected",x===b));renderTasks()});
