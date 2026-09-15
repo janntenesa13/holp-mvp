@@ -112,3 +112,86 @@ $("#settleButton").onclick=()=>{const pending=state.expenses.filter(e=>e.status=
 $("#copyCode").onclick=()=>{navigator.clipboard?.writeText("HOLP-8K4M");toast("Codi copiat")};
 document.addEventListener("keydown",e=>{if(e.key==="Escape")$("#modalBackdrop").hidden=true});
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js"));
+
+/* HOLP v7: calendari dinàmic, compra compartida i catàleg de tasques */
+const HOLP_DAYS=["Diumenge","Dilluns","Dimarts","Dimecres","Dijous","Divendres","Dissabte"];
+const HOLP_MONTHS=["gener","febrer","març","abril","maig","juny","juliol","agost","setembre","octubre","novembre","desembre"];
+const HOLP_TASKS={"Cuina":["Rentar els plats","Netejar els fogons","Netejar la nevera","Fregar el terra"],"Menjador":["Treure la pols","Aspirar","Fregar el terra","Netejar les finestres"],"Lavabo":["Netejar el vàter","Netejar la dutxa","Netejar el mirall","Canviar les tovalloles"],"Habitacions":["Canviar els llençols","Treure la pols","Aspirar","Ordenar"],"Bugaderia":["Posar una rentadora","Estendre la roba","Plegar la roba","Planxar"],"Exterior":["Treure les escombraries","Netejar el balcó","Regar les plantes"],"Altres":[]};
+const holpIso=d=>[d.getFullYear(),String(d.getMonth()+1).padStart(2,"0"),String(d.getDate()).padStart(2,"0")].join("-");
+const holpToday=()=>holpIso(new Date());
+const holpFormat=value=>{const d=new Date(value+"T12:00:00");return `${HOLP_DAYS[d.getDay()].toLowerCase()}, ${d.getDate()} de ${HOLP_MONTHS[d.getMonth()]}`};
+let holpSelectedDate=holpToday();
+state.events=state.events.map((e,i)=>({...e,date:e.date||holpToday()}));
+state.tasks=state.tasks.map(t=>({...t,section:t.section||"Altres",due:t.due&&/^\d{4}-/.test(t.due)?t.due:holpToday()}));
+state.shopping=state.shopping||[{id:31,name:"Llet",quantity:"2 brics",category:"Menjar",done:false,addedBy:"Laia"},{id:32,name:"Paper higiènic",quantity:"1 paquet",category:"Casa",done:false,addedBy:"Pau"}];
+state.shopper=state.shopper||null;
+
+function holpUpdateDate(){
+ const now=new Date();
+ $("#todayLabel").textContent=holpFormat(holpToday()).toUpperCase();
+ $("#agendaMonth").textContent=`${HOLP_MONTHS[new Date(holpSelectedDate+"T12:00:00").getMonth()].toUpperCase()} ${new Date(holpSelectedDate+"T12:00:00").getFullYear()}`;
+}
+function holpWeek(){
+ const current=new Date(holpSelectedDate+"T12:00:00"),monday=new Date(current);monday.setDate(current.getDate()-((current.getDay()+6)%7));
+ $("#weekStrip").innerHTML=Array.from({length:7},(_,i)=>{const d=new Date(monday);d.setDate(monday.getDate()+i);const value=holpIso(d);return `<button class="day ${value===holpSelectedDate?"selected":""}" data-holp-day="${value}"><b>${["Dl","Dt","Dc","Dj","Dv","Ds","Dg"][i]}</b><span>${d.getDate()}</span></button>`}).join("");
+ $$("[data-holp-day]").forEach(b=>b.onclick=()=>{holpSelectedDate=b.dataset.holpDay;renderAgenda()});
+}
+function holpOverlap(aStart,aEnd,bStart,bEnd){const n=t=>{const [h,m]=t.split(":").map(Number);return h+m/60};return Math.max(0,Math.min(n(aEnd),n(bEnd))-Math.max(n(aStart),n(bStart)))}
+renderAgenda=function(){
+ holpUpdateDate();holpWeek();
+ const events=state.events.filter(e=>e.date===holpSelectedDate);
+ $("#agendaList").innerHTML=events.map(e=>`<article class="agenda-event"><div class="time">${e.start}<small>fins ${e.end}</small></div><div><h3>${e.title}</h3><p>${e.person}</p></div><span class="privacy">${e.privacy==="Privat"?"🔒":e.privacy==="Personal"?"👤":"🏠"}</span></article>`).join("")||`<p class="empty-note">Cap esdeveniment el ${holpFormat(holpSelectedDate)}.</p>`;
+ $("#todayEvents").innerHTML=state.events.filter(e=>e.date===holpToday()).slice(0,3).map(eventHTML).join("")||'<p class="empty-note">Agenda lliure avui.</p>';
+ $("#routineList").innerHTML=state.routines.map(r=>`<article class="agenda-event"><div class="time">${r.start}<small>fins ${r.end}</small></div><div><h3>${r.day} · ${r.title}</h3><p>${r.member} · Cada setmana</p></div><button class="routine-delete" data-routine-delete="${r.id}">×</button></article>`).join("")||'<p class="empty-note">Encara no hi ha rutines.</p>';
+ $$("[data-routine-delete]").forEach(b=>b.onclick=()=>{state.routines=state.routines.filter(r=>String(r.id)!==b.dataset.routineDelete);save();renderAgenda()});
+ const day=HOLP_DAYS[new Date(holpSelectedDate+"T12:00:00").getDay()];
+ $("#availabilityBars").innerHTML=state.members.map(m=>{const blocks=state.routines.filter(r=>r.member===m.name&&r.day===day),base=durationHours(m.freeFrom,m.freeTo),busy=blocks.reduce((n,r)=>n+holpOverlap(m.freeFrom,m.freeTo,r.start,r.end),0),free=Math.max(0,base-busy);return `<div class="schedule-row"><div><b>${m.name}</b><small>Base ${m.freeFrom}–${m.freeTo}${blocks.length?" · "+blocks.map(x=>x.title+" "+x.start+"–"+x.end).join(", "):""}</small></div><span>${free.toLocaleString("ca-ES")} h lliures</span><em>${busy?busy.toLocaleString("ca-ES")+" h restades per rutines":"Sense rutines aquest dia"}</em></div>`}).join("");
+};
+
+function renderShopping(){
+ const pending=state.shopping.filter(x=>!x.done);
+ $("#shoppingPreview").innerHTML=pending.slice(0,3).map(x=>`<span>○ ${x.name}<small>${x.quantity}</small></span>`).join("")||'<span>La llista està completa ✓</span>';
+ $("#shopperName").textContent=state.shopper||"Encara ningú";
+ $("#shoppingStats").innerHTML=`<b>${pending.length} productes pendents</b><span>${state.shopping.length-pending.length} comprats</span>`;
+ $("#shoppingList").innerHTML=state.shopping.map(x=>`<article class="shopping-item ${x.done?"done":""}"><button data-shop-toggle="${x.id}">${x.done?"✓":""}</button><div><h3>${x.name}</h3><p>${x.quantity} · ${x.category} · ${x.addedBy}</p></div><button class="shopping-delete" data-shop-delete="${x.id}">×</button></article>`).join("")||'<p class="empty-note">Afegeix el primer producte.</p>';
+ $$("[data-shop-toggle]").forEach(b=>b.onclick=()=>{const x=state.shopping.find(i=>String(i.id)===b.dataset.shopToggle);x.done=!x.done;save();renderShopping()});
+ $$("[data-shop-delete]").forEach(b=>b.onclick=()=>{state.shopping=state.shopping.filter(i=>String(i.id)!==b.dataset.shopDelete);save();renderShopping()});
+}
+$("#takeShopping").onclick=()=>{state.shopper=state.shopper==="Jan"?null:"Jan";save();renderShopping();toast(state.shopper?"T’encarregues de la compra":"Compra alliberada")};
+
+renderMembers=function(){
+ $("#memberList").innerHTML=state.members.map((m,i)=>`<article class="member"><span class="avatar" style="background:${m.color}">${m.initials}</span><div><b>${m.name}${i===0?" (tu)":""}</b><small>Disponible ${m.freeFrom}–${m.freeTo}</small></div>${i===0?`<small>${m.load}% càrrega</small>`:`<button class="member-delete" data-safe-member-delete="${m.name}">Eliminar</button>`}</article>`).join("");
+ $$("[data-safe-member-delete]").forEach(b=>b.onclick=()=>{const name=b.dataset.safeMemberDelete;if(!confirm(`Eliminar ${name}? S’eliminaran les tasques pendents i rutines assignades; l’historial es conservarà.`))return;state.members=state.members.filter(m=>m.name!==name);state.tasks=state.tasks.filter(t=>t.who!==name||t.done);state.routines=state.routines.filter(r=>r.member!==name);if(state.shopper===name)state.shopper=null;save();render();toast("Membre exclòs de les assignacions")});
+};
+
+const holpBaseOpenModal=openModal;
+openModal=function(type){
+ if(type!=="task"&&type!=="shopping"&&type!=="event"){holpBaseOpenModal(type);return}
+ editingExpenseId=null;
+ if(type==="shopping"){
+  $("#modalTitle").textContent="Afegir a la compra";
+  $("#modalForm").innerHTML=`<div class="field"><label>Producte</label><input name="name" required></div><div class="field"><label>Quantitat</label><input name="quantity" required placeholder="Ex. 2 paquets"></div><div class="field"><label>Categoria</label><select name="category"><option>Menjar</option><option>Casa</option><option>Higiene</option><option>Altres</option></select></div><button class="submit">Desar</button>`;
+ }else if(type==="event"){
+  $("#modalTitle").textContent="Nou esdeveniment";
+  $("#modalForm").innerHTML=`<div class="field"><label>Títol</label><input name="title" required></div><div class="field"><label>Data</label><input name="date" type="date" value="${holpSelectedDate}" required></div><div class="two-fields"><div class="field"><label>Comença</label><input name="start" type="time" required></div><div class="field"><label>Acaba</label><input name="end" type="time" required></div></div><div class="field"><label>Visibilitat</label><select name="privacy"><option>Compartit</option><option>Personal</option><option>Privat</option></select></div><button class="submit">Desar</button>`;
+ }else{
+  $("#modalTitle").textContent="Nova tasca";
+  $("#modalForm").innerHTML=`<div class="field"><label>Estança</label><select name="section" id="holpSection">${Object.keys(HOLP_TASKS).map(x=>`<option>${x}</option>`).join("")}</select></div><div class="field"><label>Tasca</label><select name="catalog" id="holpCatalog"></select></div><div class="field" id="holpCustom" hidden><label>Una altra tasca</label><input name="custom"></div><div class="field"><label>Responsable</label><select name="who">${state.members.map(m=>`<option>${m.name}</option>`).join("")}</select></div><div class="field"><label>Data</label><input name="due" type="date" value="${holpToday()}" required></div><div class="field"><label>Repetició</label><select name="recurrence">${recurrenceOptions}</select></div><button class="submit">Desar</button>`;
+  const section=$("#holpSection"),catalog=$("#holpCatalog"),custom=$("#holpCustom"),sync=()=>{const items=HOLP_TASKS[section.value];catalog.innerHTML=items.length?items.map(x=>`<option>${x}</option>`).join(""):'<option value="">Personalitzada</option>';custom.hidden=section.value!=="Altres"};section.onchange=sync;sync();
+ }
+ $("#modalForm").dataset.type=type;$("#modalBackdrop").hidden=false;
+};
+
+const holpSubmit=$("#modalForm").onsubmit;
+$("#modalForm").onsubmit=e=>{
+ const type=e.currentTarget.dataset.type;
+ if(!["task","shopping","event"].includes(type)){holpSubmit(e);return}
+ e.preventDefault();const f=new FormData(e.currentTarget);
+ if(type==="shopping")state.shopping.unshift({id:Date.now(),name:f.get("name"),quantity:f.get("quantity"),category:f.get("category"),done:false,addedBy:"Jan"});
+ if(type==="event"){const start=f.get("start"),end=f.get("end"),privacy=f.get("privacy");if(durationHours(start,end)<=0){toast("Horari incorrecte");return}state.events.push({id:Date.now(),date:f.get("date"),start,end,title:privacy==="Privat"?"Ocupat":f.get("title"),person:"Jan",privacy,type:privacy==="Compartit"?"mint":privacy==="Personal"?"violet":"gray"});holpSelectedDate=f.get("date")}
+ if(type==="task"){const section=f.get("section"),title=section==="Altres"?f.get("custom")?.trim():f.get("catalog");if(!title){toast("Escriu la tasca");return}const who=f.get("who"),m=state.members.find(x=>x.name===who);state.tasks.unshift({id:Date.now(),title,section,duration:"30 min",effort:"Mitjà",who,initials:m.initials,done:false,recurrence:f.get("recurrence"),due:f.get("due")})}
+ save();render();$("#modalBackdrop").hidden=true;navigate(type==="shopping"?"compra":type==="event"?"agenda":"tasques");toast("Desat correctament")
+};
+const holpRender=render;
+render=function(){holpRender();holpUpdateDate();renderShopping()};
+render();
