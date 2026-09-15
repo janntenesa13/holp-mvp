@@ -12,6 +12,13 @@ Aplicació nativa React Native amb Expo. Aquesta entrega permet crear tasques am
 
 Les notificacions locals funcionen amb Expo Go. Les notificacions push remotes entre membres necessitaran una development build, un projecte EAS i un backend.
 
+## Membres i horaris recurrents
+
+- Es poden afegir i eliminar membres de la llar.
+- En eliminar un membre, les seves tasques passen al perfil principal.
+- Cada membre pot tenir activitats setmanals amb dia, hora inicial i final.
+- Les rutines es desen al dispositiu i serviran per calcular la disponibilitat.
+
 ## Comportament dels recordatoris
 
 - Es poden programar a l’hora exacta o 15, 30 o 60 minuts abans.
