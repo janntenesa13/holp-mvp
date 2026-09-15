@@ -5,11 +5,14 @@ HOLP és una aplicació mòbil per organitzar la convivència: tasques domèstiq
 ## Funcions incloses
 
 - Resum diari de la llar
+- Tasques recurrents setmanals, quinzenals o mensuals amb rotació automàtica
 - Tasques completables i filtres
 - Repartiment visible de la càrrega
-- Agenda compartida amb tres nivells de privacitat
+- Agenda compartida amb hora d’inici i final, horari despert i franges disponibles
+- Tres nivells de privacitat per als esdeveniments
 - Disponibilitat per membre
-- Despeses compartides i càlcul de saldos
+- Despeses editables, eliminables i arxivables, amb categories i totals mensuals
+- Càlcul de saldos i liquidació de deutes
 - Invitació de membres
 - Dades persistents al dispositiu amb localStorage
 - Instal·lació com a PWA i funcionament offline
