@@ -48,15 +48,16 @@
         <div class="week-strip" id="weekStrip"></div>
         <div class="legend"><span><i class="dot mint"></i>Compartit</span><span><i class="dot violet"></i>Personal</span><span><i class="dot gray"></i>Ocupat</span></div>
         <div id="agendaList" class="agenda-list"></div>
-        <article class="availability"><div><h3>Disponibilitat d’avui</h3><p>HOLP utilitza aquestes hores per repartir millor.</p></div><div id="availabilityBars"></div></article>
+        <article class="availability"><div><h3>Disponibilitat d’avui</h3><p>HOLP utilitza aquestes hores per repartir millor.</p></div><div id="availabilityBars"></div><button class="outline-light" data-open="availability">Editar el meu horari</button></article>
       </section>
 
       <section class="view" data-view="despeses">
         <div class="page-title"><div><p class="eyebrow">SETEMBRE</p><h1>Despeses</h1></div><button class="primary-small" data-open="expense">＋ Afegir</button></div>
-        <article class="expense-hero"><p>Despesa total de la llar</p><strong id="totalExpense">0,00 €</strong><span id="monthCount"></span></article>
+        <article class="expense-hero"><p>Total de despeses mensuals</p><strong id="totalExpense">0,00 €</strong><span id="monthCount"></span></article>
+        <div id="categoryTotals" class="category-grid"></div>
         <div id="settlements" class="settlements"></div>
         <div class="section-head"><h2>Últims moviments</h2><button id="settleButton">Saldar deutes</button></div>
-        <div id="expenseList" class="stack"></div>
+        <div id="expenseList" class="stack"></div><div class="section-head"><h2>Pagades aquest mes</h2></div><div id="paidExpenseList" class="stack"></div>
       </section>
 
       <section class="view" data-view="llar">
