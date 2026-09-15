@@ -1,5 +1,5 @@
-const CACHE="holp-v4";
-const ASSETS=["./","./index.html","./styles.css?v=4","./app.js?v=4","./manifest.webmanifest?v=4","./icon.svg"];
+const CACHE="holp-v5";
+const ASSETS=["./","./index.html","./styles.css?v=5","./app.js?v=5","./manifest.webmanifest?v=5","./icon.svg"];
 
 self.addEventListener("install",event=>{
   self.skipWaiting();
