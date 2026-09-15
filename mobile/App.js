@@ -27,12 +27,13 @@ Notifications.setNotificationHandler({
 });
 
 const STORAGE_KEY = "holp-native-tasks-v1";
-const MEMBERS = [
+const INITIAL_MEMBERS = [
   { name: "Jan", initials: "JT", color: "#c5e5ff" },
   { name: "Laia", initials: "LA", color: "#d8cef8" },
   { name: "Pau", initials: "PA", color: "#ffd9bd" },
 ];
 const REPEATS = ["Cap", "Setmanal", "Cada 2 setmanes", "Mensual"];
+const DAYS = ["Dilluns", "Dimarts", "Dimecres", "Dijous", "Divendres", "Dissabte", "Diumenge"];
 const REMINDERS = [0, 15, 30, 60];
 
 const initialTasks = [
@@ -128,6 +129,13 @@ export default function App() {
   const [loaded, setLoaded] = useState(false);
   const [modal, setModal] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [members, setMembers] = useState(INITIAL_MEMBERS);
+  const [routines, setRoutines] = useState([
+    { id: "r1", member: "Jan", day: "Dilluns", title: "Treball", start: "08:00", end: "17:00" },
+    { id: "r2", member: "Laia", day: "Dimecres", title: "Classe", start: "19:00", end: "20:30" },
+  ]);
+  const [newMember, setNewMember] = useState("");
+  const [routine, setRoutine] = useState({ member: "Jan", day: "Dilluns", title: "", start: "08:00", end: "17:00" });
   const [form, setForm] = useState({
     title: "",
     assignee: "Jan",
@@ -143,6 +151,13 @@ export default function App() {
       .then(value => value && setTasks(JSON.parse(value)))
       .catch(() => {})
       .finally(() => setLoaded(true));
+    AsyncStorage.getItem("holp-native-household-v1").then(value => {
+      if (value) {
+        const saved = JSON.parse(value);
+        if (saved.members?.length) setMembers(saved.members);
+        if (saved.routines) setRoutines(saved.routines);
+      }
+    }).catch(() => {});
     Notifications.getPermissionsAsync().then(p =>
       setNotificationsEnabled(
         p.granted || p.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL
@@ -155,6 +170,10 @@ export default function App() {
   useEffect(() => {
     if (loaded) AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)).catch(() => {});
   }, [tasks, loaded]);
+
+  useEffect(() => {
+    if (loaded) AsyncStorage.setItem("holp-native-household-v1", JSON.stringify({ members, routines })).catch(() => {});
+  }, [members, routines, loaded]);
 
   const pending = useMemo(() => tasks.filter(t => !t.done), [tasks]);
   const todayTasks = pending.filter(t => t.date === todayISO());
@@ -195,6 +214,35 @@ export default function App() {
       await Notifications.cancelScheduledNotificationAsync(task.notificationId).catch(() => {});
     }
     setTasks(current => current.filter(t => t.id !== task.id));
+  }
+
+  function addMember() {
+    const name = newMember.trim();
+    if (!name) return;
+    if (members.some(m => m.name.toLowerCase() === name.toLowerCase())) return Alert.alert("Membre repetit", "Aquest membre ja existeix.");
+    setMembers(current => [...current, { name, initials: name.slice(0, 2).toUpperCase(), color: "#c9f0df" }]);
+    setNewMember("");
+  }
+
+  function removeMember(name) {
+    if (name === "Jan") return Alert.alert("No es pot eliminar", "Jan és el perfil principal d’aquesta prova.");
+    Alert.alert("Eliminar membre", `Vols eliminar ${name}? Les seves tasques passaran a Jan.`, [
+      { text: "Cancel·lar", style: "cancel" },
+      { text: "Eliminar", style: "destructive", onPress: () => {
+        setMembers(current => current.filter(m => m.name !== name));
+        setTasks(current => current.map(t => t.assignee === name ? { ...t, assignee: "Jan" } : t));
+        setRoutines(current => current.filter(r => r.member !== name));
+      }},
+    ]);
+  }
+
+  function addRoutine() {
+    if (!routine.title.trim()) return Alert.alert("Falta l’activitat", "Escriu treball, classe o una altra activitat.");
+    const start = parseDateTime("2026-01-01", routine.start);
+    const end = parseDateTime("2026-01-01", routine.end);
+    if (!start || !end || end <= start) return Alert.alert("Horari incorrecte", "L’hora final ha de ser posterior a la inicial.");
+    setRoutines(current => [...current, { ...routine, id: String(Date.now()), title: routine.title.trim() }]);
+    setRoutine(current => ({ ...current, title: "" }));
   }
 
   async function testNotification() {
@@ -272,6 +320,28 @@ export default function App() {
               <Pressable style={styles.testButton} onPress={testNotification}><Text style={styles.testButtonText}>Enviar notificació de prova</Text></Pressable>
             </View>
             <Text style={styles.help}>Quan creïs una tasca, podràs decidir si vols l’avís a l’hora exacta o 15, 30 o 60 minuts abans.</Text>
+            <SectionTitle title="Membres de la llar" />
+            {members.map(member => (
+              <View key={member.name} style={styles.manageRow}>
+                <View style={[styles.person, { backgroundColor: member.color }]}><Text style={styles.personText}>{member.initials}</Text></View>
+                <Text style={[styles.cardTitle, { flex: 1 }]}>{member.name}</Text>
+                {member.name !== "Jan" && <Pressable onPress={() => removeMember(member.name)}><Text style={styles.deleteText}>Eliminar</Text></Pressable>}
+              </View>
+            ))}
+            <View style={styles.inlineForm}><TextInput value={newMember} onChangeText={setNewMember} placeholder="Nom del nou membre" style={[styles.input, { flex: 1 }]} /><Pressable style={styles.inlineButton} onPress={addMember}><Text style={styles.inlineButtonText}>Afegir</Text></Pressable></View>
+
+            <SectionTitle title="Horaris setmanals" />
+            {routines.map(item => (
+              <View key={item.id} style={styles.routineCard}>
+                <View style={{ flex: 1 }}><Text style={styles.cardTitle}>{item.day} · {item.title}</Text><Text style={styles.cardMeta}>{item.member} · {item.start}–{item.end} · cada setmana</Text></View>
+                <Pressable onPress={() => setRoutines(current => current.filter(r => r.id !== item.id))}><Text style={styles.deleteText}>×</Text></Pressable>
+              </View>
+            ))}
+            <Label text="Membre" /><ChipRow options={members.map(m => m.name)} value={routine.member} onChange={member => setRoutine({ ...routine, member })} />
+            <Label text="Dia" /><ChipRow options={DAYS} value={routine.day} onChange={day => setRoutine({ ...routine, day })} />
+            <Label text="Activitat recurrent" /><TextInput value={routine.title} onChangeText={title => setRoutine({ ...routine, title })} placeholder="Ex. Treball o classe" style={styles.input} />
+            <View style={styles.twoCols}><View style={{ flex: 1 }}><Label text="Comença" /><TextInput value={routine.start} onChangeText={start => setRoutine({ ...routine, start })} style={styles.input} /></View><View style={{ flex: 1 }}><Label text="Acaba" /><TextInput value={routine.end} onChangeText={end => setRoutine({ ...routine, end })} style={styles.input} /></View></View>
+            <Pressable style={styles.testButton} onPress={addRoutine}><Text style={styles.testButtonText}>Afegir horari setmanal</Text></Pressable>
           </>
         )}
       </ScrollView>
@@ -292,7 +362,7 @@ export default function App() {
               <Label text="Què s’ha de fer?" />
               <TextInput value={form.title} onChangeText={title => setForm({ ...form, title })} placeholder="Ex. Netejar la cuina" style={styles.input} />
               <Label text="Responsable" />
-              <ChipRow options={MEMBERS.map(m => m.name)} value={form.assignee} onChange={assignee => setForm({ ...form, assignee })} />
+              <ChipRow options={members.map(m => m.name)} value={form.assignee} onChange={assignee => setForm({ ...form, assignee })} />
               <View style={styles.twoCols}>
                 <View style={{ flex: 1 }}><Label text="Data" /><TextInput value={form.date} onChangeText={date => setForm({ ...form, date })} placeholder="AAAA-MM-DD" style={styles.input} keyboardType="numbers-and-punctuation" /></View>
                 <View style={{ flex: 1 }}><Label text="Hora" /><TextInput value={form.time} onChangeText={time => setForm({ ...form, time })} placeholder="HH:MM" style={styles.input} keyboardType="numbers-and-punctuation" /></View>
@@ -314,7 +384,7 @@ function SectionTitle({ title, action, onPress }) {
   return <View style={styles.sectionHead}><Text style={styles.sectionTitle}>{title}</Text>{action && <Pressable onPress={onPress}><Text style={styles.action}>{action}</Text></Pressable>}</View>;
 }
 function TaskCard({ task, onComplete, onDelete }) {
-  const member = MEMBERS.find(m => m.name === task.assignee) || MEMBERS[0];
+  const member = INITIAL_MEMBERS.find(m => m.name === task.assignee) || { initials: task.assignee.slice(0, 2).toUpperCase(), color: "#c9f0df" };
   return (
     <View style={[styles.task, task.done && styles.taskDone]}>
       <Pressable style={[styles.check, task.done && styles.checkDone]} onPress={() => onComplete(task)}><Text style={styles.checkText}>{task.done ? "✓" : ""}</Text></Pressable>
@@ -368,5 +438,11 @@ const styles = StyleSheet.create({
   twoCols: { flexDirection: "row", gap: 10 }, chips: { gap: 8, paddingBottom: 3 }, chip: { borderWidth: 1, borderColor: "#cad2cd", borderRadius: 20, paddingVertical: 9, paddingHorizontal: 13 }, chipSelected: { backgroundColor: "#101a17", borderColor: "#101a17" }, chipText: { color: "#435047", fontWeight: "700" }, chipTextSelected: { color: "#fff" },
   switchRow: { flexDirection: "row", alignItems: "center", marginTop: 18, padding: 14, backgroundColor: "#f1f4f1", borderRadius: 15 },
   submit: { backgroundColor: "#16634b", borderRadius: 14, padding: 16, alignItems: "center", marginTop: 22, marginBottom: 15 }, submitText: { color: "#fff", fontWeight: "900", fontSize: 16 },
+  manageRow: { flexDirection: "row", alignItems: "center", gap: 11, backgroundColor: "#fff", borderWidth: 1, borderColor: "#dde3df", borderRadius: 15, padding: 12, marginBottom: 8 },
+  inlineForm: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 4 },
+  inlineButton: { backgroundColor: "#16634b", borderRadius: 13, paddingHorizontal: 14, paddingVertical: 14 },
+  inlineButtonText: { color: "#fff", fontWeight: "800" },
+  deleteText: { color: "#a64040", fontWeight: "800", fontSize: 14 },
+  routineCard: { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#fff", borderWidth: 1, borderColor: "#dde3df", borderRadius: 15, padding: 13, marginBottom: 8 },
   empty: { borderWidth: 1, borderStyle: "dashed", borderColor: "#cad2cd", borderRadius: 16, padding: 20, alignItems: "center" },
 });
