@@ -1,0 +1,24 @@
+{
+  "expo": {
+    "name": "HOLP",
+    "slug": "holp",
+    "version": "0.2.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "holp",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.holp.mobile"
+    },
+    "android": {
+      "package": "app.holp.mobile",
+      "permissions": ["SCHEDULE_EXACT_ALARM"]
+    },
+    "plugins": [
+      ["expo-notifications", {
+        "color": "#16634b",
+        "defaultChannel": "tasques"
+      }]
+    ]
+  }
+}
