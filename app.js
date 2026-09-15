@@ -1,91 +1,108 @@
 const seed={
  tasks:[
-  {id:1,title:"Netejar el bany",meta:"30 min · Esforç alt",who:"Laia",initials:"LA",done:false},
-  {id:2,title:"Fer la compra",meta:"45 min · Llista preparada",who:"Jan",initials:"JT",done:false},
-  {id:3,title:"Treure les escombraries",meta:"5 min · Abans de les 21:00",who:"Pau",initials:"PA",done:true},
-  {id:4,title:"Posar una rentadora",meta:"15 min · Roba de color",who:"Jan",initials:"JT",done:false}
+  {id:1,title:"Netejar el bany",meta:"30 min · Esforç alt",duration:"30 min",effort:"Alt",who:"Laia",initials:"LA",done:false,recurrence:"Setmanal",due:"21 set."},
+  {id:2,title:"Fer la compra",meta:"45 min · Llista preparada",duration:"45 min",effort:"Mitjà",who:"Jan",initials:"JT",done:false,recurrence:"Setmanal",due:"Avui"},
+  {id:3,title:"Treure les escombraries",meta:"5 min · Abans de les 21:00",duration:"5 min",effort:"Baix",who:"Pau",initials:"PA",done:true,recurrence:"Cap",due:""},
+  {id:4,title:"Posar una rentadora",meta:"15 min · Roba de color",duration:"15 min",effort:"Mitjà",who:"Jan",initials:"JT",done:false,recurrence:"Cada 2 setmanes",due:"28 set."}
  ],
  events:[
-  {time:"09:00",title:"Teletreball",person:"Jan",privacy:"Personal",type:"violet"},
-  {time:"17:30",title:"Dentista",person:"Laia",privacy:"Compartit",type:"mint"},
-  {time:"20:30",title:"Sopar de la llar",person:"Tothom",privacy:"Compartit",type:"mint"},
-  {time:"22:00",title:"Ocupat",person:"Pau",privacy:"Privat",type:"gray"}
+  {id:11,start:"09:00",end:"17:00",title:"Teletreball",person:"Jan",privacy:"Personal",type:"violet"},
+  {id:12,start:"17:30",end:"18:30",title:"Dentista",person:"Laia",privacy:"Compartit",type:"mint"},
+  {id:13,start:"20:30",end:"22:00",title:"Sopar de la llar",person:"Tothom",privacy:"Compartit",type:"mint"},
+  {id:14,start:"22:00",end:"23:00",title:"Ocupat",person:"Pau",privacy:"Privat",type:"gray"}
  ],
  expenses:[
-  {id:1,title:"Compra setmanal",category:"🛒",amount:82.40,payer:"Jan",split:["Jan","Laia","Pau"]},
-  {id:2,title:"Internet",category:"📶",amount:39.90,payer:"Laia",split:["Jan","Laia","Pau"]},
-  {id:3,title:"Productes de neteja",category:"🧻",amount:21.35,payer:"Pau",split:["Jan","Laia","Pau"]}
+  {id:1,title:"Compra setmanal",category:"Menjar",icon:"🛒",amount:82.40,payer:"Jan",split:["Jan","Laia","Pau"],status:"pending"},
+  {id:2,title:"Internet",category:"Pagaments mensuals",icon:"📶",amount:39.90,payer:"Laia",split:["Jan","Laia","Pau"],status:"paid"},
+  {id:3,title:"Productes de neteja",category:"Casa",icon:"🧻",amount:21.35,payer:"Pau",split:["Jan","Laia","Pau"],status:"pending"}
  ],
  members:[
-  {name:"Jan",initials:"JT",load:42,free:6,color:"#c5e5ff"},
-  {name:"Laia",initials:"LA",load:33,free:3,color:"#d8cef8"},
-  {name:"Pau",initials:"PA",load:25,free:5,color:"#ffd9bd"}
+  {name:"Jan",initials:"JT",load:42,wake:"07:00",sleep:"23:30",freeFrom:"18:00",freeTo:"22:30",color:"#c5e5ff"},
+  {name:"Laia",initials:"LA",load:33,wake:"08:00",sleep:"00:00",freeFrom:"18:30",freeTo:"21:30",color:"#d8cef8"},
+  {name:"Pau",initials:"PA",load:25,wake:"07:30",sleep:"23:00",freeFrom:"16:00",freeTo:"21:00",color:"#ffd9bd"}
  ]
 };
 let state=JSON.parse(localStorage.getItem("holp-state")||"null")||structuredClone(seed);
-let taskFilter="pending";
+state.tasks=(state.tasks||[]).map(t=>({...t,duration:t.duration||t.meta?.split(" · ")[0]||"30 min",effort:t.effort||"Mitjà",recurrence:t.recurrence||"Cap",due:t.due||""}));
+state.events=(state.events||[]).map(e=>({...e,id:e.id||Date.now()+Math.random(),start:e.start||e.time||"09:00",end:e.end||addHour(e.time||"09:00")}));
+state.expenses=(state.expenses||[]).map(e=>({...e,category:e.category||"Altres",icon:e.icon||e.category||"🧾",status:e.status||"pending"}));
+state.members=(state.members||[]).map((m,i)=>({...m,wake:m.wake||["07:00","08:00","07:30"][i]||"07:30",sleep:m.sleep||"23:30",freeFrom:m.freeFrom||"18:00",freeTo:m.freeTo||"22:00"}));
+let taskFilter="pending",editingExpenseId=null;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const money=n=>n.toLocaleString("ca-ES",{style:"currency",currency:"EUR"});
+function addHour(t){const [h,m]=t.split(":").map(Number);return String((h+1)%24).padStart(2,"0")+":"+String(m).padStart(2,"0")}
+function durationHours(from,to){let [a,b]=[from,to].map(t=>{const [h,m]=t.split(":").map(Number);return h+m/60});if(b<a)b+=24;return Math.max(0,b-a)}
 function save(){localStorage.setItem("holp-state",JSON.stringify(state))}
 function toast(message){const el=$("#toast");el.textContent=message;el.classList.add("show");clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>el.classList.remove("show"),2200)}
 function navigate(view){$$(".view").forEach(v=>v.classList.toggle("active",v.dataset.view===view));$$(".bottom-nav button").forEach(b=>b.classList.toggle("active",b.dataset.nav===view));window.scrollTo({top:0,behavior:"smooth"})}
 $$("[data-nav]").forEach(b=>b.addEventListener("click",()=>navigate(b.dataset.nav)));
 
-function taskHTML(t){return `<article class="task-card ${t.done?"done":""}"><button class="task-check ${t.done?"checked":""}" data-task="${t.id}" aria-label="${t.done?"Reobrir":"Completar"} ${t.title}">${t.done?"✓":""}</button><div><h3>${t.title}</h3><p>${t.meta} · ${t.who}</p></div><span class="assignee">${t.initials}</span></article>`}
+function taskHTML(t){const repeat=t.recurrence&&t.recurrence!=="Cap"?` · ↻ ${t.recurrence}`:"";return `<article class="task-card ${t.done?"done":""}"><button class="task-check ${t.done?"checked":""}" data-task="${t.id}" aria-label="${t.done?"Reobrir":"Completar"} ${t.title}">${t.done?"✓":""}</button><div><h3>${t.title}</h3><p>${t.duration} · Esforç ${t.effort} · ${t.who}${repeat}${t.due?" · "+t.due:""}</p></div><span class="assignee">${t.initials}</span></article>`}
+function nextDue(recurrence){return recurrence==="Setmanal"?"D’aquí 1 setmana":recurrence==="Cada 2 setmanes"?"D’aquí 2 setmanes":recurrence==="Mensual"?"El mes vinent":""}
+function rotateTask(t){if(!t.recurrence||t.recurrence==="Cap")return;const i=state.members.findIndex(m=>m.name===t.who),next=state.members[(i+1)%state.members.length];state.tasks.push({...t,id:Date.now()+Math.random(),done:false,who:next.name,initials:next.initials,due:nextDue(t.recurrence)})}
 function renderTasks(){
  $("#todayTasks").innerHTML=state.tasks.filter(t=>!t.done).slice(0,3).map(taskHTML).join("")||'<p>Tot fet per avui! 🎉</p>';
  const list=state.tasks.filter(t=>taskFilter==="all"||(taskFilter==="done"?t.done:!t.done));
  $("#taskList").innerHTML=list.map(taskHTML).join("")||"<p>No hi ha tasques en aquesta vista.</p>";
- $$(".task-check").forEach(b=>b.onclick=()=>{const t=state.tasks.find(x=>x.id===+b.dataset.task);t.done=!t.done;save();renderTasks();toast(t.done?"Tasca completada":"Tasca reoberta")});
+ $$(".task-check").forEach(b=>b.onclick=()=>{const t=state.tasks.find(x=>x.id==b.dataset.task);const wasDone=t.done;t.done=!t.done;if(!wasDone&&t.done)rotateTask(t);save();renderTasks();toast(t.done?(t.recurrence!=="Cap"?"Completada i pròxim torn creat":"Tasca completada"):"Tasca reoberta")});
  $("#workload").innerHTML=state.members.map(m=>`<div class="load-person"><span><b>${m.name}</b><em>${m.load}%</em></span><div class="load-track"><i style="width:${m.load}%"></i></div></div>`).join("");
 }
 $$("[data-task-filter]").forEach(b=>b.onclick=()=>{taskFilter=b.dataset.taskFilter;$$("[data-task-filter]").forEach(x=>x.classList.toggle("selected",x===b));renderTasks()});
-function eventHTML(e){return `<div class="event-row ${e.type}"><time>${e.time}</time><i class="event-line"></i><div><b>${e.title}</b><small>${e.person} · ${e.privacy}</small></div></div>`}
+function eventHTML(e){return `<div class="event-row ${e.type}"><time>${e.start}<small>${e.end}</small></time><i class="event-line"></i><div><b>${e.title}</b><small>${e.person} · ${e.privacy}</small></div></div>`}
 function renderAgenda(){
  $("#todayEvents").innerHTML=state.events.slice(0,3).map(eventHTML).join("");
- $("#agendaList").innerHTML=state.events.map(e=>`<article class="agenda-event"><div class="time">${e.time}</div><div><h3>${e.title}</h3><p>${e.person}</p></div><span class="privacy">${e.privacy==="Privat"?"🔒":e.privacy==="Personal"?"👤":"🏠"}</span></article>`).join("");
+ $("#agendaList").innerHTML=state.events.map(e=>`<article class="agenda-event"><div class="time">${e.start}<small>fins ${e.end}</small></div><div><h3>${e.title}</h3><p>${e.person}</p></div><span class="privacy">${e.privacy==="Privat"?"🔒":e.privacy==="Personal"?"👤":"🏠"}</span></article>`).join("");
  $("#weekStrip").innerHTML=["Dl|14","Dt|15","Dc|16","Dj|17","Dv|18","Ds|19","Dg|20"].map((d,i)=>{const [a,b]=d.split("|");return `<button class="day ${i===0?"selected":""}"><b>${a}</b><span>${b}</span></button>`}).join("");
- $("#availabilityBars").innerHTML=state.members.map(m=>`<div class="availability-row"><b>${m.name}</b><div class="availability-track"><i style="width:${m.free/8*100}%"></i></div><span>${m.free} h</span></div>`).join("");
+ $("#availabilityBars").innerHTML=state.members.map(m=>{const h=durationHours(m.freeFrom,m.freeTo);return `<div class="schedule-row"><div><b>${m.name}</b><small>Despert ${m.wake}–${m.sleep}</small></div><span>${m.freeFrom}–${m.freeTo}</span><em>${h.toLocaleString("ca-ES")} h lliures</em></div>`}).join("");
 }
-function balances(){
- const bal=Object.fromEntries(state.members.map(m=>[m.name,0]));
- state.expenses.forEach(e=>{const share=e.amount/e.split.length;e.split.forEach(p=>bal[p]-=share);bal[e.payer]+=e.amount});
- return bal;
-}
+const categoryIcons={"Menjar":"🛒","Pagaments mensuals":"🏠","Casa":"🧻","Oci":"🎟️","Altres":"🧾"};
+function balances(){const bal=Object.fromEntries(state.members.map(m=>[m.name,0]));state.expenses.filter(e=>e.status==="pending").forEach(e=>{const share=e.amount/e.split.length;e.split.forEach(p=>bal[p]=(bal[p]||0)-share);bal[e.payer]=(bal[e.payer]||0)+e.amount});return bal}
+function expenseHTML(e,paid=false){return `<article class="expense-card"><span class="expense-icon">${e.icon||categoryIcons[e.category]||"🧾"}</span><div><h3>${e.title}</h3><p>Ha pagat ${e.payer} · ${e.category}</p><div class="expense-actions">${paid?'<span class="paid-label">Pagada ✓</span>':`<button data-expense-edit="${e.id}">Editar</button><button data-expense-pay="${e.id}">Pagada</button><button class="danger-link" data-expense-delete="${e.id}">Eliminar</button>`}</div></div><strong>${money(e.amount)}</strong></article>`}
 function renderExpenses(){
- $("#totalExpense").textContent=money(state.expenses.reduce((s,e)=>s+e.amount,0));
- $("#monthCount").textContent=`${state.expenses.length} moviments aquest mes`;
- $("#expenseList").innerHTML=state.expenses.map(e=>`<article class="expense-card"><span class="expense-icon">${e.category}</span><div><h3>${e.title}</h3><p>Ha pagat ${e.payer} · entre ${e.split.length}</p></div><strong>${money(e.amount)}</strong></article>`).join("");
+ const all=state.expenses,total=all.reduce((s,e)=>s+e.amount,0),pending=all.filter(e=>e.status==="pending"),paid=all.filter(e=>e.status==="paid");
+ $("#totalExpense").textContent=money(total);$("#monthCount").textContent=`${all.length} moviments aquest mes · ${paid.length} pagats`;
+ const cats=all.reduce((a,e)=>{a[e.category]=(a[e.category]||0)+e.amount;return a},{});
+ $("#categoryTotals").innerHTML=Object.entries(cats).map(([name,value])=>`<article><span>${categoryIcons[name]||"🧾"} ${name}</span><b>${money(value)}</b></article>`).join("");
+ $("#expenseList").innerHTML=pending.map(e=>expenseHTML(e)).join("")||'<p class="empty-note">No hi ha pagaments pendents.</p>';
+ $("#paidExpenseList").innerHTML=paid.map(e=>expenseHTML(e,true)).join("")||'<p class="empty-note">Encara no hi ha despeses pagades.</p>';
  const bal=balances(),creditor=Object.entries(bal).sort((a,b)=>b[1]-a[1])[0],debtors=Object.entries(bal).filter(x=>x[1]<-.01);
  $("#settlements").innerHTML=debtors.map(d=>`<div class="settlement"><span>${d[0]} deu a ${creditor[0]}</span><b>${money(Math.min(-d[1],creditor[1]))}</b></div>`).join("")||'<div class="settlement"><span>Tot saldat</span><b>✓</b></div>';
+ $$("[data-expense-edit]").forEach(b=>b.onclick=()=>openExpenseEdit(+b.dataset.expenseEdit));
+ $$("[data-expense-pay]").forEach(b=>b.onclick=()=>{const e=state.expenses.find(x=>x.id===+b.dataset.expensePay);e.status="paid";save();renderExpenses();toast("Despesa passada a pagades")});
+ $$("[data-expense-delete]").forEach(b=>b.onclick=()=>{if(confirm("Vols eliminar aquesta despesa?")){state.expenses=state.expenses.filter(x=>x.id!==+b.dataset.expenseDelete);save();renderExpenses();toast("Despesa eliminada")}});
 }
 function renderMembers(){
- $("#memberList").innerHTML=state.members.map((m,i)=>`<article class="member"><span class="avatar" style="background:${m.color}">${m.initials}</span><div><b>${m.name}${i===0?" (tu)":""}</b><small>${m.free} h disponibles avui</small></div><small>${m.load}% càrrega</small></article>`).join("");
+ $("#memberList").innerHTML=state.members.map((m,i)=>`<article class="member"><span class="avatar" style="background:${m.color}">${m.initials}</span><div><b>${m.name}${i===0?" (tu)":""}</b><small>Disponible ${m.freeFrom}–${m.freeTo}</small></div><small>${m.load}% càrrega</small></article>`).join("");
 }
 function render(){renderTasks();renderAgenda();renderExpenses();renderMembers()}render();
 
+const recurrenceOptions='<option>Cap</option><option>Setmanal</option><option>Cada 2 setmanes</option><option>Mensual</option>';
+const categoryOptions=Object.keys(categoryIcons).map(x=>`<option>${x}</option>`).join("");
 const forms={
- task:{title:"Nova tasca",html:`<div class="field"><label>Què s’ha de fer?</label><input name="title" required placeholder="Ex. Netejar la cuina"></div><div class="field"><label>Responsable</label><select name="who"><option>Jan</option><option>Laia</option><option>Pau</option></select></div><div class="field"><label>Durada</label><select name="duration"><option>15 min</option><option>30 min</option><option>45 min</option><option>60 min</option></select></div>`},
- event:{title:"Nou esdeveniment",html:`<div class="field"><label>Títol</label><input name="title" required placeholder="Ex. Sopar amb amics"></div><div class="field"><label>Hora</label><input name="time" type="time" required></div><div class="field"><label>Visibilitat</label><select name="privacy"><option>Compartit</option><option>Personal</option><option>Privat</option></select></div>`},
- expense:{title:"Nova despesa",html:`<div class="field"><label>Concepte</label><input name="title" required placeholder="Ex. Compra setmanal"></div><div class="field"><label>Import</label><input name="amount" type="number" min=".01" step=".01" required placeholder="0,00"></div><div class="field"><label>Ha pagat</label><select name="payer"><option>Jan</option><option>Laia</option><option>Pau</option></select></div>`},
+ task:{title:"Nova tasca recurrent",html:`<div class="field"><label>Què s’ha de fer?</label><input name="title" required placeholder="Ex. Netejar els vidres"></div><div class="field"><label>Responsable del primer torn</label><select name="who"><option>Jan</option><option>Laia</option><option>Pau</option></select></div><div class="field"><label>Durada</label><select name="duration"><option>15 min</option><option>30 min</option><option>45 min</option><option>60 min</option></select></div><div class="field"><label>Esforç</label><select name="effort"><option>Baix</option><option selected>Mitjà</option><option>Alt</option></select></div><div class="field"><label>Cada quan es repeteix?</label><select name="recurrence">${recurrenceOptions}</select></div>`},
+ event:{title:"Nou esdeveniment",html:`<div class="field"><label>Títol</label><input name="title" required placeholder="Ex. Sopar amb amics"></div><div class="two-fields"><div class="field"><label>Comença</label><input name="start" type="time" required></div><div class="field"><label>Acaba</label><input name="end" type="time" required></div></div><div class="field"><label>Visibilitat</label><select name="privacy"><option>Compartit</option><option>Personal</option><option>Privat</option></select></div>`},
+ expense:{title:"Nova despesa",html:`<div class="field"><label>Concepte</label><input name="title" required placeholder="Ex. Compra setmanal"></div><div class="field"><label>Categoria</label><select name="category">${categoryOptions}</select></div><div class="field"><label>Import</label><input name="amount" type="number" min=".01" step=".01" required placeholder="0,00"></div><div class="field"><label>Ha pagat</label><select name="payer"><option>Jan</option><option>Laia</option><option>Pau</option></select></div>`},
  member:{title:"Convidar a la llar",html:`<div class="field"><label>Nom</label><input name="name" required placeholder="Nom del nou membre"></div><div class="field"><label>Correu electrònic</label><input name="email" type="email" required placeholder="nom@exemple.cat"></div>`},
+ availability:{title:"El meu horari d’avui",html:`<div class="two-fields"><div class="field"><label>Em llevo</label><input name="wake" type="time" required></div><div class="field"><label>Vaig a dormir</label><input name="sleep" type="time" required></div></div><div class="two-fields"><div class="field"><label>Disponible des de</label><input name="freeFrom" type="time" required></div><div class="field"><label>Disponible fins a</label><input name="freeTo" type="time" required></div></div>`},
  quick:{title:"Què vols afegir?",html:`<div class="field"><label>Tipus</label><select name="kind"><option value="task">Una tasca</option><option value="event">Un esdeveniment</option><option value="expense">Una despesa</option></select></div>`}
 };
-function openModal(type){const f=forms[type];$("#modalTitle").textContent=f.title;$("#modalForm").innerHTML=f.html+'<button class="submit" type="submit">Desar</button>';$("#modalForm").dataset.type=type;$("#modalBackdrop").hidden=false;$("#modalForm input")?.focus()}
+function openModal(type){editingExpenseId=null;const f=forms[type];$("#modalTitle").textContent=f.title;$("#modalForm").innerHTML=f.html+'<button class="submit" type="submit">Desar</button>';$("#modalForm").dataset.type=type;$("#modalBackdrop").hidden=false;if(type==="availability"){const m=state.members[0];["wake","sleep","freeFrom","freeTo"].forEach(k=>$("#modalForm").elements[k].value=m[k])}$("#modalForm input")?.focus()}
+function openExpenseEdit(id){const e=state.expenses.find(x=>x.id===id);openModal("expense");editingExpenseId=id;$("#modalTitle").textContent="Editar despesa";["title","category","amount","payer"].forEach(k=>$("#modalForm").elements[k].value=e[k])}
 $$("[data-open]").forEach(b=>b.onclick=()=>openModal(b.dataset.open));
 $("#closeModal").onclick=()=>$("#modalBackdrop").hidden=true;
 $("#modalBackdrop").onclick=e=>{if(e.target===e.currentTarget)e.currentTarget.hidden=true};
 $("#modalForm").onsubmit=e=>{
  e.preventDefault();const form=new FormData(e.currentTarget),type=e.currentTarget.dataset.type;
  if(type==="quick"){openModal(form.get("kind"));return}
- if(type==="task"){const who=form.get("who"),m=state.members.find(x=>x.name===who);state.tasks.unshift({id:Date.now(),title:form.get("title"),meta:`${form.get("duration")} · Esforç mitjà`,who,initials:m.initials,done:false});navigate("tasques")}
- if(type==="event"){const privacy=form.get("privacy");state.events.push({time:form.get("time"),title:privacy==="Privat"?"Ocupat":form.get("title"),person:"Jan",privacy,type:privacy==="Compartit"?"mint":privacy==="Personal"?"violet":"gray"});state.events.sort((a,b)=>a.time.localeCompare(b.time));navigate("agenda")}
- if(type==="expense"){state.expenses.unshift({id:Date.now(),title:form.get("title"),category:"🧾",amount:+form.get("amount"),payer:form.get("payer"),split:state.members.map(m=>m.name)});navigate("despeses")}
- if(type==="member"){const name=form.get("name");state.members.push({name,initials:name.slice(0,2).toUpperCase(),load:0,free:4,color:"#c9f0df"});toast("Invitació preparada")}
+ if(type==="task"){const who=form.get("who"),m=state.members.find(x=>x.name===who);state.tasks.unshift({id:Date.now(),title:form.get("title"),duration:form.get("duration"),effort:form.get("effort"),meta:"",who,initials:m.initials,done:false,recurrence:form.get("recurrence"),due:"Avui"});navigate("tasques")}
+ if(type==="event"){const privacy=form.get("privacy"),start=form.get("start"),end=form.get("end");if(durationHours(start,end)<=0){toast("L’hora final ha de ser posterior");return}state.events.push({id:Date.now(),start,end,title:privacy==="Privat"?"Ocupat":form.get("title"),person:"Jan",privacy,type:privacy==="Compartit"?"mint":privacy==="Personal"?"violet":"gray"});state.events.sort((a,b)=>a.start.localeCompare(b.start));navigate("agenda")}
+ if(type==="expense"){const category=form.get("category"),data={title:form.get("title"),category,icon:categoryIcons[category],amount:+form.get("amount"),payer:form.get("payer")};if(editingExpenseId){Object.assign(state.expenses.find(x=>x.id===editingExpenseId),data)}else state.expenses.unshift({id:Date.now(),...data,split:state.members.map(m=>m.name),status:"pending"});navigate("despeses")}
+ if(type==="availability"){const m=state.members[0];["wake","sleep","freeFrom","freeTo"].forEach(k=>m[k]=form.get(k));navigate("agenda")}
+ if(type==="member"){const name=form.get("name");state.members.push({name,initials:name.slice(0,2).toUpperCase(),load:0,wake:"07:30",sleep:"23:30",freeFrom:"18:00",freeTo:"22:00",color:"#c9f0df"});toast("Invitació preparada")}
  save();render();$("#modalBackdrop").hidden=true;toast("Desat correctament");
 };
-$("#acceptSuggestion").onclick=()=>{const t=state.tasks.find(t=>t.title==="Fer la compra");t.who="Jan";t.initials="JT";save();renderTasks();$("#acceptSuggestion").textContent="Acceptada ✓";$("#acceptSuggestion").disabled=true;toast("Pla actualitzat")};
-$("#settleButton").onclick=()=>toast("Enllaç de pagament copiat");
+$("#acceptSuggestion").onclick=()=>{const t=state.tasks.find(t=>t.title==="Fer la compra");if(t){t.who="Jan";t.initials="JT";save();renderTasks()}$("#acceptSuggestion").textContent="Acceptada ✓";$("#acceptSuggestion").disabled=true;toast("Pla actualitzat")};
+$("#settleButton").onclick=()=>{const pending=state.expenses.filter(e=>e.status==="pending");if(!pending.length){toast("No hi ha deutes pendents");return}if(confirm("Marcar totes les despeses pendents com a pagades?")){pending.forEach(e=>e.status="paid");save();renderExpenses();toast("Deutes saldats i arxivats")}};
 $("#copyCode").onclick=()=>{navigator.clipboard?.writeText("HOLP-8K4M");toast("Codi copiat")};
 document.addEventListener("keydown",e=>{if(e.key==="Escape")$("#modalBackdrop").hidden=true});
 if("serviceWorker" in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js"));
