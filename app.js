@@ -56,7 +56,7 @@ function renderAgenda(){
  $("#weekStrip").innerHTML=["Dl|14","Dt|15","Dc|16","Dj|17","Dv|18","Ds|19","Dg|20"].map((d,i)=>{const [a,b]=d.split("|");return `<button class="day ${i===0?"selected":""}"><b>${a}</b><span>${b}</span></button>`}).join("");
  $("#availabilityBars").innerHTML=state.members.map(m=>{const h=durationHours(m.freeFrom,m.freeTo);return `<div class="schedule-row"><div><b>${m.name}</b><small>Despert ${m.wake}–${m.sleep}</small></div><span>${m.freeFrom}–${m.freeTo}</span><em>${h.toLocaleString("ca-ES")} h lliures</em></div>`}).join("");
  $("#routineList").innerHTML=state.routines.map(r=>`<article class="agenda-event"><div class="time">${r.start}<small>fins ${r.end}</small></div><div><h3>${r.day} · ${r.title}</h3><p>${r.member} · Cada setmana</p></div><button class="routine-delete" data-routine-delete="${r.id}" aria-label="Eliminar rutina">×</button></article>`).join("")||'<p class="empty-note">Encara no hi ha rutines setmanals.</p>';
- $("[data-routine-delete]").forEach(b=>b.onclick=()=>{state.routines=state.routines.filter(r=>r.id!==+b.dataset.routineDelete);save();renderAgenda();toast("Rutina eliminada")});
+ $$("[data-routine-delete]").forEach(b=>b.onclick=()=>{state.routines=state.routines.filter(r=>r.id!==+b.dataset.routineDelete);save();renderAgenda();toast("Rutina eliminada")});
 }
 const categoryIcons={"Menjar":"🛒","Pagaments mensuals":"🏠","Casa":"🧻","Oci":"🎟️","Altres":"🧾"};
 function balances(){const bal=Object.fromEntries(state.members.map(m=>[m.name,0]));state.expenses.filter(e=>e.status==="pending").forEach(e=>{const share=e.amount/e.split.length;e.split.forEach(p=>bal[p]=(bal[p]||0)-share);bal[e.payer]=(bal[e.payer]||0)+e.amount});return bal}
