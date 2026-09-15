@@ -5,16 +5,16 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#101a17">
   <meta name="description" content="HOLP — organitza la convivència, les tasques, l'agenda i les despeses de casa.">
-  <link rel="manifest" href="manifest.webmanifest?v=7">
+  <link rel="manifest" href="manifest.webmanifest?v=8">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=7">
+  <link rel="stylesheet" href="styles.css?v=8">
   <title>HOLP</title>
 </head>
 <body>
   <div class="shell">
     <header class="topbar">
       <button class="home-switch" aria-label="Canviar de llar">
-        <span class="mark">H</span><span><b>Casa Balmes</b><small>3 membres</small></span><span aria-hidden="true">⌄</span>
+        <span class="mark">H</span><span><b>Bosch House</b><small>1 membre</small></span><span aria-hidden="true">⌄</span>
       </button>
       <button class="avatar" aria-label="Obrir perfil">JT</button>
     </header>
@@ -47,7 +47,11 @@
 
       <section class="view" data-view="agenda">
         <div class="page-title"><div><p class="eyebrow" id="agendaMonth"></p><h1>Agenda</h1></div><button class="primary-small" data-open="event">＋ Esdeveniment</button></div>
-        <div class="week-strip" id="weekStrip"></div>
+        <div class="week-strip legacy-week" id="weekStrip"></div>
+        <div class="calendar-toolbar"><button id="calendarPrev" aria-label="Anterior">‹</button><strong id="calendarTitle"></strong><button id="calendarNext" aria-label="Següent">›</button></div>
+        <div class="segmented calendar-mode"><button class="selected" data-calendar-mode="month">Mes</button><button data-calendar-mode="year">Any</button></div>
+        <div id="monthCalendar" class="month-calendar"></div>
+        <div id="yearCalendar" class="year-calendar" hidden></div>
         <div class="legend"><span><i class="dot mint"></i>Compartit</span><span><i class="dot violet"></i>Personal</span><span><i class="dot gray"></i>Ocupat</span></div>
         <div id="agendaList" class="agenda-list"></div><div class="section-head"><h2>Rutines setmanals</h2><button data-open="routine">＋ Afegir</button></div><div id="routineList" class="agenda-list"></div>
         <article class="availability"><div><h3>Disponibilitat d’avui</h3><p>HOLP utilitza aquestes hores per repartir millor.</p></div><div id="availabilityBars"></div><button class="outline-light" data-open="availability">Editar el meu horari</button></article>
@@ -66,12 +70,16 @@
         <div class="page-title"><div><p class="eyebrow">COMPARTIDA</p><h1>Llista de la compra</h1></div><button class="primary-small" data-open="shopping">＋ Producte</button></div>
         <article class="shopping-owner"><div><small>Qui va al supermercat?</small><strong id="shopperName">Encara ningú</strong></div><button id="takeShopping">M’hi encarrego</button></article>
         <div class="shopping-stats" id="shoppingStats"></div>
-        <div id="shoppingList" class="stack roomy"></div>
+        <div class="section-head"><h2>Què falta?</h2><button id="clearBought">Netejar comprats</button></div>
+        <div id="shoppingList" class="stack"></div>
+        <div class="section-head"><h2>Afegir productes habituals</h2></div>
+        <div class="field catalog-select"><label>Categoria</label><select id="productCategory"></select></div>
+        <div id="productCatalog" class="product-catalog"></div>
       </section>
 
       <section class="view" data-view="llar">
-        <div class="page-title"><div><p class="eyebrow">EL TEU ESPAI</p><h1>Casa Balmes</h1></div><button class="icon-button" data-open="member" aria-label="Convidar membre">＋</button></div>
-        <article class="home-card"><div class="home-symbol">⌂</div><div><h2>Casa Balmes</h2><p>Codi d’invitació · <b>HOLP-8K4M</b></p></div><button id="copyCode">Copiar</button></article>
+        <div class="page-title"><div><p class="eyebrow">EL TEU ESPAI</p><h1>Bosch House</h1></div><button class="icon-button" data-open="member" aria-label="Convidar membre">＋</button></div>
+        <article class="home-card"><div class="home-symbol">⌂</div><div><h2>Bosch House</h2><p>Codi d’invitació · <b>HOLP-8K4M</b></p></div><button id="copyCode">Copiar</button></article>
         <h2 class="standalone">Membres</h2>
         <div id="memberList" class="member-list"></div><p class="member-help">Mantén premut “Eliminar” per confirmar la baixa.</p>
         <h2 class="standalone">Preferències de la llar</h2>
@@ -97,6 +105,6 @@
     </div>
   </div>
   <div class="toast" id="toast" role="status"></div>
-  <script src="app.js?v=7"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>
