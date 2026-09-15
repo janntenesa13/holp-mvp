@@ -195,3 +195,83 @@ $("#modalForm").onsubmit=e=>{
 const holpRender=render;
 render=function(){holpRender();holpUpdateDate();renderShopping()};
 render();
+
+
+/* HOLP v8: Bosch House, calendaris mensual/anual i catàlegs complets */
+const HOLP_FULL_TASKS={
+"Neteja general":["Escombrar o aspirar els terres","Fregar els terres","Treure la pols de mobles, prestatges i decoració","Netejar portes, poms i interruptors","Netejar vidres, finestres i persianes","Netejar miralls","Treure teranyines","Netejar sòcols","Aspirar sofàs, butaques i coixins","Netejar sota els mobles","Ordenar les habitacions","Buidar les papereres","Treure les escombraries","Separar i treure el reciclatge"],
+"Cuina":["Rentar els plats o posar el rentaplats","Buidar el rentaplats","Netejar la pica i l’aixeta","Netejar els fogons/placa","Netejar el marbre i les superfícies","Netejar la taula i les cadires","Netejar el microones","Netejar el forn","Netejar la campana extractora i els filtres","Netejar la nevera i el congelador","Revisar aliments caducats","Netejar armaris i calaixos","Ordenar el rebost","Fer la llista de la compra","Fer la compra","Guardar la compra","Planificar els àpats","Cuinar","Preparar esmorzars, dinars i sopars","Recollir i netejar després de cuinar"],
+"Banys":["Netejar el vàter","Netejar lavabo i aixetes","Netejar dutxa o banyera","Netejar mampares","Netejar miralls","Desinfectar superfícies","Fregar el terra","Canviar les tovalloles","Rentar catifes de bany","Reposar paper higiènic","Reposar sabó, xampú, etc.","Netejar desguassos","Eliminar la calç"],
+"Habitacions":["Fer els llits","Canviar els llençols","Rentar la roba de llit","Ordenar tauletes i superfícies","Ordenar armaris i calaixos","Guardar la roba","Aspirar sota el llit","Girar o rotar el matalàs periòdicament"],
+"Roba":["Recollir la roba bruta","Separar-la per tipus/color","Posar rentadores","Estendre la roba o posar l’assecadora","Recollir la roba seca","Doblegar-la","Planxar","Guardar-la","Rentar peces delicades","Rentar jaquetes, nòrdics, cortines, etc.","Revisar roba que cal arreglar o substituir"],
+"Sala, menjador i zones comunes":["Recollir objectes","Ordenar sofàs i coixins","Netejar taules","Treure la pols dels mobles","Netejar televisió i aparells electrònics","Aspirar sofàs i catifes","Ordenar llibres, revistes, joguines, etc.","Netejar llums i làmpades"],
+"Exterior":["Escombrar terrassa, pati o balcó","Netejar mobles d’exterior","Regar les plantes","Podar i cuidar plantes","Tallar la gespa","Treure males herbes","Recollir fulles","Netejar barbacoa","Netejar desguassos i canalons","Mantenir piscina, si n’hi ha","Ordenar garatge o traster"],
+"Altres":[]
+};
+const HOLP_PRODUCTS={
+"Fruita i verdura":["Patates","Cebes","Alls","Tomàquets","Enciam","Pastanagues","Pebrots","Carbassó","Albergínia","Cogombre","Bròquil","Coliflor","Espinacs","Mongeta tendra","Xampinyons","Porros","Carxofes","Alvocat","Llimones","Taronges / mandarines","Pomes","Peres","Plàtans","Kiwi","Raïm","Maduixes","Préssecs / nectarines","Meló / síndria","Fruita de temporada"],
+"Carn":["Pollastre","Pit de pollastre","Cuixes de pollastre","Gall dindi","Vedella","Porc","Llom","Costelles","Carn picada","Hamburgueses","Botifarres","Salsitxes","Bacon","Pernil"],
+"Peix i marisc":["Salmó","Lluç","Bacallà","Tonyina","Sardines","Calamars","Sípia","Gambes","Musclos","Peix congelat"],
+"Ous i lactis":["Ous","Llet","Beguda vegetal","Iogurts","Formatge","Formatge ratllat","Formatge per untar","Mantega","Nata per cuinar","Postres làctics"],
+"Pa, cereals i esmorzar":["Pa","Pa de motlle","Torrades","Cereals","Civada","Galetes","Croissants / brioixeria","Melmelada","Mel","Crema de cacau","Cafè","Cafè soluble","Cacau en pols","Te / infusions"],
+"Pasta, arròs i llegums":["Arròs","Pasta","Espaguetis","Macarrons","Fideus","Cuscús","Quinoa","Llenties","Cigrons","Mongetes","Llegums cuits en pot"],
+"Rebost i conserves":["Tonyina en llauna","Sardines / anxoves","Tomàquet triturat","Tomàquet fregit","Blat de moro","Olives","Pebrots en conserva","Brou","Sopes","Farina","Llevat","Pa ratllat","Sucre","Sal","Fruits secs"],
+"Oli, salses i condiments":["Oli d’oliva","Oli per cuinar","Vinagre","Maionesa","Ketchup","Mostassa","Salsa de soja","Salsa barbacoa","Pesto","Pebre","Orenga","Julivert","Pebre vermell","Curri","All en pols","Altres espècies"],
+"Congelats":["Verdures congelades","Pèsols","Espinacs","Patates fregides","Peix congelat","Marisc","Pizza","Croquetes","Canelons / lasanya","Gelats","Fruita congelada"],
+"Embotits i coses per picar":["Pernil dolç","Pernil salat","Gall dindi","Fuet","Xoriço","Llonganissa","Formatges","Hummus","Patates xips","Olives","Fruits secs","Galetes salades"],
+"Begudes":["Aigua","Aigua amb gas","Sucs","Refrescos","Llet","Begudes vegetals","Cafè","Te / infusions"],
+"Dolços i postres":["Xocolata","Galetes","Cereals","Gelats","Flam","Natilles","Iogurts","Pastissos / brioixeria","Caramels"],
+"Supermercat i llar":["Paper higiènic","Paper de cuina","Tovallons","Paper d’alumini","Film transparent","Bosses d’escombraries","Detergent de roba","Suavitzant","Rentavaixelles","Pastilles de rentaplats","Producte per fregar","Lleixiu / desinfectant","Netejavidres","Esponges","Sabó de mans","Gel de dutxa","Xampú","Pasta de dents"]
+};
+Object.keys(HOLP_TASKS).forEach(k=>delete HOLP_TASKS[k]);Object.assign(HOLP_TASKS,HOLP_FULL_TASKS);
+state.migrations=state.migrations||{};
+if(!state.migrations.boschV8){
+ state.members=state.members.filter(m=>!["Laia","Pau"].includes(m.name));
+ state.tasks=state.tasks.filter(t=>!["Laia","Pau"].includes(t.who));
+ state.events=state.events.filter(e=>!["Laia","Pau"].includes(e.person));
+ state.routines=state.routines.filter(r=>!["Laia","Pau"].includes(r.member));
+ state.expenses=state.expenses.filter(e=>!["Laia","Pau"].includes(e.payer)).map(e=>({...e,split:e.split.filter(p=>!["Laia","Pau"].includes(p))}));
+ state.shopping=state.shopping.filter(x=>!["Laia","Pau"].includes(x.addedBy));
+ state.shopper=null;state.migrations.boschV8=true;save();
+}
+let holpCalendarMode="month",holpCalendarDate=new Date();
+function holpDateKey(d){return holpIso(d)}
+function holpMonthGrid(){
+ const year=holpCalendarDate.getFullYear(),month=holpCalendarDate.getMonth(),first=new Date(year,month,1),start=(first.getDay()+6)%7,days=new Date(year,month+1,0).getDate();
+ $("#calendarTitle").textContent=`${HOLP_MONTHS[month]} ${year}`;
+ $("#monthCalendar").innerHTML=`<div class="cal-weekdays">${["Dl","Dt","Dc","Dj","Dv","Ds","Dg"].map(x=>`<b>${x}</b>`).join("")}</div><div class="cal-days">${Array(start).fill('<span></span>').join("")}${Array.from({length:days},(_,i)=>{const key=holpIso(new Date(year,month,i+1)),count=state.events.filter(e=>e.date===key).length;return `<button class="${key===holpSelectedDate?"selected":""} ${key===holpToday()?"today":""}" data-month-day="${key}"><b>${i+1}</b>${count?`<i>${count}</i>`:""}</button>`}).join("")}</div>`;
+ $$("[data-month-day]").forEach(b=>b.onclick=()=>{holpSelectedDate=b.dataset.monthDay;renderAgenda()});
+}
+function holpYearGrid(){
+ const year=holpCalendarDate.getFullYear();$("#calendarTitle").textContent=String(year);
+ $("#yearCalendar").innerHTML=HOLP_MONTHS.map((name,month)=>{const count=state.events.filter(e=>{const d=new Date(e.date+"T12:00:00");return d.getFullYear()===year&&d.getMonth()===month}).length;return `<button data-year-month="${month}"><b>${name}</b><span>${count} esdeveniment${count===1?"":"s"}</span></button>`}).join("");
+ $$("[data-year-month]").forEach(b=>b.onclick=()=>{holpCalendarDate=new Date(year,+b.dataset.yearMonth,1);holpSelectedDate=holpIso(holpCalendarDate);holpCalendarMode="month";$$("[data-calendar-mode]").forEach(x=>x.classList.toggle("selected",x.dataset.calendarMode==="month"));renderAgenda()});
+}
+const v7RenderAgenda=renderAgenda;
+renderAgenda=function(){
+ v7RenderAgenda();
+ $("#weekStrip").hidden=true;
+ $("#monthCalendar").hidden=holpCalendarMode!=="month";$("#yearCalendar").hidden=holpCalendarMode!=="year";
+ if(holpCalendarMode==="month")holpMonthGrid();else holpYearGrid();
+};
+$$("[data-calendar-mode]").forEach(b=>b.onclick=()=>{holpCalendarMode=b.dataset.calendarMode;$$("[data-calendar-mode]").forEach(x=>x.classList.toggle("selected",x===b));renderAgenda()});
+$("#calendarPrev").onclick=()=>{holpCalendarDate.setMonth(holpCalendarDate.getMonth()+(holpCalendarMode==="month"?-1:-12));renderAgenda()};
+$("#calendarNext").onclick=()=>{holpCalendarDate.setMonth(holpCalendarDate.getMonth()+(holpCalendarMode==="month"?1:12));renderAgenda()};
+
+function ensureShoppingTask(){
+ const pending=state.shopping.some(x=>!x.done),exists=state.tasks.some(t=>!t.done&&t.title==="Fer la compra");
+ if(pending&&!exists){const m=state.members.find(x=>x.name===(state.shopper||"Jan"))||state.members[0];state.tasks.unshift({id:Date.now()+Math.random(),title:"Fer la compra",section:"Cuina",duration:"45 min",effort:"Mitjà",who:m.name,initials:m.initials,done:false,recurrence:"Cap",due:holpToday(),shoppingTask:true})}
+ if(!pending)state.tasks=state.tasks.filter(t=>!t.shoppingTask||t.done);
+}
+function renderProductCatalog(){
+ const select=$("#productCategory");if(!select.dataset.ready){select.innerHTML=Object.keys(HOLP_PRODUCTS).map(x=>`<option>${x}</option>`).join("");select.onchange=renderProductCatalog;select.dataset.ready="1"}
+ const category=select.value||Object.keys(HOLP_PRODUCTS)[0];
+ $("#productCatalog").innerHTML=HOLP_PRODUCTS[category].map(name=>{const active=state.shopping.some(x=>x.name===name&&!x.done);return `<button class="${active?"selected":""}" data-product="${name}"><span>${active?"✓":"＋"}</span>${name}</button>`}).join("");
+ $$("[data-product]").forEach(b=>b.onclick=()=>{const name=b.dataset.product,existing=state.shopping.find(x=>x.name===name&&!x.done);if(existing)state.shopping=state.shopping.filter(x=>x!==existing);else state.shopping.unshift({id:Date.now()+Math.random(),name,quantity:"1",category,done:false,addedBy:"Jan"});ensureShoppingTask();save();render()});
+}
+const v7RenderShopping=renderShopping;
+renderShopping=function(){v7RenderShopping();renderProductCatalog()};
+$("#clearBought").onclick=()=>{state.shopping=state.shopping.filter(x=>!x.done);save();renderShopping()};
+const oldTake=$("#takeShopping").onclick;
+$("#takeShopping").onclick=()=>{oldTake();const task=state.tasks.find(t=>!t.done&&t.title==="Fer la compra");if(task&&state.shopper){const m=state.members.find(x=>x.name===state.shopper);task.who=m.name;task.initials=m.initials;save();renderTasks()}};
+const v7Render=render;render=function(){ensureShoppingTask();v7Render();document.querySelector(".home-switch b").textContent="Bosch House";document.querySelector(".home-switch small").textContent=`${state.members.length} membre${state.members.length===1?"":"s"}`};render();
