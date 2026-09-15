@@ -76,7 +76,7 @@ function renderExpenses(){
 }
 function renderMembers(){
  $("#memberList").innerHTML=state.members.map((m,i)=>`<article class="member"><span class="avatar" style="background:${m.color}">${m.initials}</span><div><b>${m.name}${i===0?" (tu)":""}</b><small>Disponible ${m.freeFrom}–${m.freeTo}</small></div>${i===0?`<small>${m.load}% càrrega</small>`:`<button class="member-delete" data-member-delete="${m.name}">Eliminar</button>`}</article>`).join("");
- $("[data-member-delete]").forEach(b=>b.onclick=()=>{const name=b.dataset.memberDelete;if(!confirm(`Eliminar ${name} de la llar? Les seves tasques passaran a Jan.`))return;state.members=state.members.filter(m=>m.name!==name);state.tasks=state.tasks.map(t=>t.who===name?{...t,who:"Jan",initials:"JT"}:t);state.routines=state.routines.filter(r=>r.member!==name);save();render();toast("Membre eliminat")});
+ $$("[data-member-delete]").forEach(b=>b.onclick=()=>{const name=b.dataset.memberDelete;if(!confirm(`Eliminar ${name} de la llar? Les seves tasques passaran a Jan.`))return;state.members=state.members.filter(m=>m.name!==name);state.tasks=state.tasks.map(t=>t.who===name?{...t,who:"Jan",initials:"JT"}:t);state.routines=state.routines.filter(r=>r.member!==name);save();render();toast("Membre eliminat")});
 }
 function render(){renderTasks();renderAgenda();renderExpenses();renderMembers()}render();
 
