@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#101a17">
   <meta name="description" content="HOLP — organitza la convivència, les tasques, l'agenda i les despeses de casa.">
-  <link rel="manifest" href="manifest.webmanifest?v=6">
+  <link rel="manifest" href="manifest.webmanifest?v=7">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=6">
+  <link rel="stylesheet" href="styles.css?v=7">
   <title>HOLP</title>
 </head>
 <body>
@@ -21,7 +21,7 @@
 
     <main id="app">
       <section class="view active" data-view="avui">
-        <div class="date-row"><div><p class="eyebrow">DILLUNS, 14 DE SETEMBRE</p><h1>Bon dia, Jan</h1></div><button class="icon-button" data-open="quick" aria-label="Afegir">＋</button></div>
+        <div class="date-row"><div><p class="eyebrow" id="todayLabel"></p><h1>Bon dia, Jan</h1></div><button class="icon-button" data-open="quick" aria-label="Afegir">＋</button></div>
         <article class="balance-card">
           <div><p>Equilibri aquesta setmana</p><strong>92%</strong><span>Una llar ben repartida</span></div>
           <div class="balance-ring" aria-label="Equilibri 92 per cent"><span>⚖</span></div>
@@ -29,6 +29,8 @@
 
         <div class="section-head"><h2>Avui a casa</h2><button data-nav="tasques">Veure-ho tot</button></div>
         <div id="todayTasks" class="stack"></div>
+        <div class="section-head"><h2>Llista de la compra</h2><button data-nav="compra">Obrir llista</button></div>
+        <div id="shoppingPreview" class="shopping-preview"></div>
 
         <div class="section-head"><h2>Agenda compartida</h2><button data-nav="agenda">Calendari</button></div>
         <div id="todayEvents" class="timeline"></div>
@@ -44,7 +46,7 @@
       </section>
 
       <section class="view" data-view="agenda">
-        <div class="page-title"><div><p class="eyebrow">SETEMBRE 2026</p><h1>Agenda</h1></div><button class="primary-small" data-open="event">＋ Esdeveniment</button></div>
+        <div class="page-title"><div><p class="eyebrow" id="agendaMonth"></p><h1>Agenda</h1></div><button class="primary-small" data-open="event">＋ Esdeveniment</button></div>
         <div class="week-strip" id="weekStrip"></div>
         <div class="legend"><span><i class="dot mint"></i>Compartit</span><span><i class="dot violet"></i>Personal</span><span><i class="dot gray"></i>Ocupat</span></div>
         <div id="agendaList" class="agenda-list"></div><div class="section-head"><h2>Rutines setmanals</h2><button data-open="routine">＋ Afegir</button></div><div id="routineList" class="agenda-list"></div>
@@ -58,6 +60,13 @@
         <div id="settlements" class="settlements"></div>
         <div class="section-head"><h2>Últims moviments</h2><button id="settleButton">Saldar deutes</button></div>
         <div id="expenseList" class="stack"></div><div class="section-head"><h2>Pagades aquest mes</h2></div><div id="paidExpenseList" class="stack"></div>
+      </section>
+
+      <section class="view" data-view="compra">
+        <div class="page-title"><div><p class="eyebrow">COMPARTIDA</p><h1>Llista de la compra</h1></div><button class="primary-small" data-open="shopping">＋ Producte</button></div>
+        <article class="shopping-owner"><div><small>Qui va al supermercat?</small><strong id="shopperName">Encara ningú</strong></div><button id="takeShopping">M’hi encarrego</button></article>
+        <div class="shopping-stats" id="shoppingStats"></div>
+        <div id="shoppingList" class="stack roomy"></div>
       </section>
 
       <section class="view" data-view="llar">
@@ -76,6 +85,7 @@
       <button data-nav="tasques"><span>✓</span><b>Tasques</b></button>
       <button data-nav="agenda"><span>▦</span><b>Agenda</b></button>
       <button data-nav="despeses"><span>€</span><b>Despeses</b></button>
+      <button data-nav="compra"><span>🛒</span><b>Compra</b></button>
       <button data-nav="llar"><span>♙</span><b>Llar</b></button>
     </nav>
   </div>
@@ -87,6 +97,6 @@
     </div>
   </div>
   <div class="toast" id="toast" role="status"></div>
-  <script src="app.js?v=6"></script>
+  <script src="app.js?v=7"></script>
 </body>
 </html>
