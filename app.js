@@ -361,3 +361,15 @@ renderMembers=function(){
 const holpV8Render=render;
 render=function(){holpV8Render();$("#workload").hidden=true;holpScheduleNotifications()};
 render();
+
+
+/* HOLP v11: inici net i agenda desactivada */
+state.migrations=state.migrations||{};
+if(!state.migrations.cleanTasksV11){
+ state.tasks=[];
+ state.migrations.cleanTasksV11=true;
+ save();
+}
+ensureShoppingTask=function(){};
+forms.quick.html='<div class="field"><label>Tipus</label><select name="kind"><option value="task">Una tasca</option><option value="expense">Una despesa</option></select></div>';
+render();
