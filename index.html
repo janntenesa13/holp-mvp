@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#101a17">
   <meta name="description" content="HOLP — organitza la convivència, les tasques, l'agenda i les despeses de casa.">
-  <link rel="manifest" href="manifest.webmanifest?v=11">
+  <link rel="manifest" href="manifest.webmanifest?v=12">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="styles.css?v=11">
+  <link rel="stylesheet" href="styles.css?v=12">
   <title>HOLP</title>
 </head>
 <body>
@@ -27,10 +27,10 @@
         <div class="section-head"><h2>Llista de la compra</h2><button data-nav="compra">Obrir llista</button></div>
         <div id="shoppingPreview" class="shopping-preview"></div>
 
-        <div class="section-head" hidden><h2>Agenda compartida</h2><button data-nav="agenda">Calendari</button></div>
-        <div id="todayEvents" class="timeline" hidden></div>
+        <div class="section-head" hidden style="display:none"><h2>Agenda compartida</h2><button data-nav="agenda">Calendari</button></div>
+        <div id="todayEvents" class="timeline" hidden style="display:none"></div>
 
-        <div class="nudge" hidden><span class="nudge-icon">✦</span><div><b>Proposta HOLP</b><p>Pots assignar les tasques quan vulguis o deixar-les obertes perquè qualsevol membre les completi.</p></div><button id="acceptSuggestion">Acceptar</button></div>
+        <div class="nudge" hidden style="display:none"><span class="nudge-icon">✦</span><div><b>Proposta HOLP</b><p>Pots assignar les tasques quan vulguis o deixar-les obertes perquè qualsevol membre les completi.</p></div><button id="acceptSuggestion">Acceptar</button></div>
       </section>
 
       <section class="view" data-view="tasques">
@@ -40,7 +40,7 @@
         <div id="taskList" class="stack roomy"></div>
       </section>
 
-      <section class="view" data-view="agenda" hidden aria-hidden="true">
+      <section class="view" data-view="agenda" hidden aria-hidden="true" style="display:none">
         <div class="page-title"><div><p class="eyebrow" id="agendaMonth"></p><h1>Agenda</h1></div><button class="primary-small" data-open="event">＋ Esdeveniment</button></div>
         <div class="week-strip legacy-week" id="weekStrip"></div>
         <div class="calendar-toolbar"><button id="calendarPrev" aria-label="Anterior">‹</button><strong id="calendarTitle"></strong><button id="calendarNext" aria-label="Següent">›</button></div>
@@ -99,6 +99,6 @@
     </div>
   </div>
   <div class="toast" id="toast" role="status"></div>
-  <script src="app.js?v=11"></script>
+  <script src="app.js?v=12"></script>
 </body>
 </html>
