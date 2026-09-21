@@ -309,15 +309,15 @@ function holpScheduleNotifications(){
  if(next&&next.ms<2147483647)window.holpNotificationTimer=setTimeout(()=>{holpNotify(next.t);holpScheduleNotifications()},next.ms);
 }
 taskHTML=function(t){
- const repeat=t.recurrence&&t.recurrence!=="Cap"?\` · ↻ \${holpEsc(t.recurrence)}\`:"";
- const owner=t.done?\`Feta per \${holpEsc(t.completedBy||t.who||"un membre")}\`:(t.who?\`Assignada a \${holpEsc(t.who)}\`:"Sense responsable");
- const due=t.due?\` · \${holpEsc(t.due)}\`:"";
- return \`<article class="task-card \${t.done?"done":""}"><button class="task-check \${t.done?"checked":""}" data-v9-task="\${t.id}" aria-label="\${t.done?"Reobrir":"Marcar com a feta"} \${holpEsc(t.title)}">\${t.done?"✓":""}</button><div><h3>\${holpEsc(t.title)}</h3><p>\${owner}\${repeat}\${due}</p></div><span class="assignee">\${t.done?"✓":(t.initials||"—")}</span></article>\`;
+ const repeat=t.recurrence&&t.recurrence!=="Cap"?` · ↻ ${holpEsc(t.recurrence)}`:"";
+ const owner=t.done?`Feta per ${holpEsc(t.completedBy||t.who||"un membre")}`:(t.who?`Assignada a ${holpEsc(t.who)}`:"Sense responsable");
+ const due=t.due?` · ${holpEsc(t.due)}`:"";
+ return `<article class="task-card ${t.done?"done":""}"><button class="task-check ${t.done?"checked":""}" data-v9-task="${t.id}" aria-label="${t.done?"Reobrir":"Marcar com a feta"} ${holpEsc(t.title)}">${t.done?"✓":""}</button><div><h3>${holpEsc(t.title)}</h3><p>${owner}${repeat}${due}</p></div><span class="assignee">${t.done?"✓":(t.initials||"—")}</span></article>`;
 };
 function holpOpenComplete(id){
  const t=state.tasks.find(x=>String(x.id)===String(id));if(!t)return;
  $("#modalTitle").textContent="Qui ha fet la tasca?";
- $("#modalForm").innerHTML=\`<p class="modal-task-name">\${holpEsc(t.title)}</p><div class="field"><label>Feta per</label><select name="completedBy">\${state.members.map(m=>\`<option \${m.name===t.who?"selected":""}>\${holpEsc(m.name)}</option>\`).join("")}</select></div><button class="submit">Marcar com a feta</button>\`;
+ $("#modalForm").innerHTML=`<p class="modal-task-name">${holpEsc(t.title)}</p><div class="field"><label>Feta per</label><select name="completedBy">${state.members.map(m=>`<option ${m.name===t.who?"selected":""}>${holpEsc(m.name)}</option>`).join("")}</select></div><button class="submit">Marcar com a feta</button>`;
  $("#modalForm").dataset.type="taskComplete";$("#modalForm").dataset.taskId=id;$("#modalBackdrop").hidden=false;
 }
 renderTasks=function(){
@@ -335,8 +335,8 @@ const holpV8OpenModal=openModal;
 openModal=function(type){
  if(type!=="task"){holpV8OpenModal(type);return}
  $("#modalTitle").textContent="Nova tasca";
- $("#modalForm").innerHTML=\`<div class="field"><label>Estança</label><select name="section" id="holpSection">\${Object.keys(HOLP_TASKS).map(x=>\`<option>\${x}</option>\`).join("")}</select></div><div class="field"><label>Tasca</label><select name="catalog" id="holpCatalog"></select></div><div class="field" id="holpCustom" hidden><label>Una altra tasca</label><input name="custom"></div><div class="field"><label>Qui l'ha de fer? (opcional)</label><select name="who"><option value="">Sense responsable</option>\${state.members.map(m=>\`<option>\${holpEsc(m.name)}</option>\`).join("")}</select></div><div class="field"><label>Data</label><input name="due" type="date" value="\${holpToday()}" required></div><div class="field"><label>Hora del recordatori</label><input name="notifyTime" type="time" value="09:00"><small>Només s'avisarà si hi ha un responsable assignat.</small></div><div class="field"><label>Vull que es repeteixi</label><select name="recurrence"><option>Cap</option><option>Diària</option><option>Setmanal</option><option>Cada 2 setmanes</option><option>Mensual</option></select></div><button class="submit">Desar</button>\`;
- const section=$("#holpSection"),catalog=$("#holpCatalog"),custom=$("#holpCustom"),sync=()=>{const items=HOLP_TASKS[section.value];catalog.innerHTML=items.length?items.map(x=>\`<option>\${holpEsc(x)}</option>\`).join(""):'<option value="">Personalitzada</option>';custom.hidden=section.value!=="Altres"};section.onchange=sync;sync();
+ $("#modalForm").innerHTML=`<div class="field"><label>Estança</label><select name="section" id="holpSection">${Object.keys(HOLP_TASKS).map(x=>`<option>${x}</option>`).join("")}</select></div><div class="field"><label>Tasca</label><select name="catalog" id="holpCatalog"></select></div><div class="field" id="holpCustom" hidden><label>Una altra tasca</label><input name="custom"></div><div class="field"><label>Qui l'ha de fer? (opcional)</label><select name="who"><option value="">Sense responsable</option>${state.members.map(m=>`<option>${holpEsc(m.name)}</option>`).join("")}</select></div><div class="field"><label>Data</label><input name="due" type="date" value="${holpToday()}" required></div><div class="field"><label>Hora del recordatori</label><input name="notifyTime" type="time" value="09:00"><small>Només s'avisarà si hi ha un responsable assignat.</small></div><div class="field"><label>Vull que es repeteixi</label><select name="recurrence"><option>Cap</option><option>Diària</option><option>Setmanal</option><option>Cada 2 setmanes</option><option>Mensual</option></select></div><button class="submit">Desar</button>`;
+ const section=$("#holpSection"),catalog=$("#holpCatalog"),custom=$("#holpCustom"),sync=()=>{const items=HOLP_TASKS[section.value];catalog.innerHTML=items.length?items.map(x=>`<option>${holpEsc(x)}</option>`).join(""):'<option value="">Personalitzada</option>';custom.hidden=section.value!=="Altres"};section.onchange=sync;sync();
  $("#modalForm").dataset.type="task";$("#modalBackdrop").hidden=false;
 };
 const holpV8Submit=$("#modalForm").onsubmit;
@@ -355,8 +355,8 @@ $("#modalForm").onsubmit=e=>{
  if(who&&"Notification" in window&&Notification.permission==="default")Notification.requestPermission().then(()=>holpScheduleNotifications());else holpScheduleNotifications();
 };
 renderMembers=function(){
- $("#memberList").innerHTML=state.members.map((m,i)=>\`<article class="member"><span class="avatar" style="background:\${m.color}">\${m.initials}</span><div><b>\${holpEsc(m.name)}\${i===0?" (tu)":""}</b><small>Disponible \${m.freeFrom}–\${m.freeTo}</small></div>\${i===0?"":\`<button class="member-delete" data-safe-member-delete="\${holpEsc(m.name)}">Eliminar</button>\`}</article>\`).join("");
- $$("[data-safe-member-delete]").forEach(b=>b.onclick=()=>{const name=b.dataset.safeMemberDelete;if(!confirm(\`Eliminar \${name}? Les tasques pendents quedaran sense responsable i l'historial es conservarà.\`))return;state.members=state.members.filter(m=>m.name!==name);state.tasks=state.tasks.map(t=>t.who===name&&!t.done?{...t,who:"",initials:"",notifyAt:""}:t);state.routines=state.routines.filter(r=>r.member!==name);if(state.shopper===name)state.shopper=null;save();render();toast("Membre eliminat")});
+ $("#memberList").innerHTML=state.members.map((m,i)=>`<article class="member"><span class="avatar" style="background:${m.color}">${m.initials}</span><div><b>${holpEsc(m.name)}${i===0?" (tu)":""}</b><small>Disponible ${m.freeFrom}–${m.freeTo}</small></div>${i===0?"":`<button class="member-delete" data-safe-member-delete="${holpEsc(m.name)}">Eliminar</button>`}</article>`).join("");
+ $$("[data-safe-member-delete]").forEach(b=>b.onclick=()=>{const name=b.dataset.safeMemberDelete;if(!confirm(`Eliminar ${name}? Les tasques pendents quedaran sense responsable i l'historial es conservarà.`))return;state.members=state.members.filter(m=>m.name!==name);state.tasks=state.tasks.map(t=>t.who===name&&!t.done?{...t,who:"",initials:"",notifyAt:""}:t);state.routines=state.routines.filter(r=>r.member!==name);if(state.shopper===name)state.shopper=null;save();render();toast("Membre eliminat")});
 };
 const holpV8Render=render;
 render=function(){holpV8Render();$("#workload").hidden=true;holpScheduleNotifications()};
