@@ -275,3 +275,89 @@ $("#clearBought").onclick=()=>{state.shopping=state.shopping.filter(x=>!x.done);
 const oldTake=$("#takeShopping").onclick;
 $("#takeShopping").onclick=()=>{oldTake();const task=state.tasks.find(t=>!t.done&&t.title==="Fer la compra");if(task&&state.shopper){const m=state.members.find(x=>x.name===state.shopper);task.who=m.name;task.initials=m.initials;save();renderTasks()}};
 const v7Render=render;render=function(){ensureShoppingTask();v7Render();document.querySelector(".home-switch b").textContent="Bosch House";document.querySelector(".home-switch small").textContent=`${state.members.length} membre${state.members.length===1?"":"s"}`};render();
+
+
+/* HOLP v9: tasques col·laboratives, responsables opcionals i recordatoris */
+state.tasks=(state.tasks||[]).map(t=>({...t,who:t.who||"",initials:t.initials||"",completedBy:t.completedBy||"",completedAt:t.completedAt||"",notifyAt:t.notifyAt||""}));
+state.migrations=state.migrations||{};
+if(!state.migrations.collaborativeV9){
+ state.tasks=state.tasks.map(t=>({...t,who:t.who==="Jan"?t.who:"",initials:t.who==="Jan"?t.initials:""}));
+ state.members=state.members.map(m=>({...m,load:undefined}));
+ state.migrations.collaborativeV9=true;save();
+}
+function holpEsc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function holpNextDate(date,recurrence){
+ const d=new Date((date||holpToday())+"T12:00:00");
+ if(recurrence==="Diària")d.setDate(d.getDate()+1);
+ if(recurrence==="Setmanal")d.setDate(d.getDate()+7);
+ if(recurrence==="Cada 2 setmanes")d.setDate(d.getDate()+14);
+ if(recurrence==="Mensual")d.setMonth(d.getMonth()+1);
+ return holpIso(d);
+}
+function holpCreateNextTask(t){
+ if(!t.recurrence||t.recurrence==="Cap")return;
+ const due=holpNextDate(t.due,t.recurrence);
+ state.tasks.push({...t,id:Date.now()+Math.random(),done:false,due,completedBy:"",completedAt:"",notifyAt:t.who?due+"T09:00":""});
+}
+function holpNotify(t){
+ if(!t.who||!t.notifyAt||t.done||!("Notification" in window)||Notification.permission!=="granted")return;
+ new Notification("HOLP · "+t.title,{body:t.who+", tens aquesta tasca pendent.",icon:"icons/icon-192.svg",tag:"holp-task-"+t.id});
+}
+function holpScheduleNotifications(){
+ clearTimeout(window.holpNotificationTimer);
+ const now=Date.now(),next=state.tasks.filter(t=>!t.done&&t.who&&t.notifyAt).map(t=>({t,ms:new Date(t.notifyAt).getTime()-now})).filter(x=>x.ms>0).sort((a,b)=>a.ms-b.ms)[0];
+ if(next&&next.ms<2147483647)window.holpNotificationTimer=setTimeout(()=>{holpNotify(next.t);holpScheduleNotifications()},next.ms);
+}
+taskHTML=function(t){
+ const repeat=t.recurrence&&t.recurrence!=="Cap"?\` · ↻ \${holpEsc(t.recurrence)}\`:"";
+ const owner=t.done?\`Feta per \${holpEsc(t.completedBy||t.who||"un membre")}\`:(t.who?\`Assignada a \${holpEsc(t.who)}\`:"Sense responsable");
+ const due=t.due?\` · \${holpEsc(t.due)}\`:"";
+ return \`<article class="task-card \${t.done?"done":""}"><button class="task-check \${t.done?"checked":""}" data-v9-task="\${t.id}" aria-label="\${t.done?"Reobrir":"Marcar com a feta"} \${holpEsc(t.title)}">\${t.done?"✓":""}</button><div><h3>\${holpEsc(t.title)}</h3><p>\${owner}\${repeat}\${due}</p></div><span class="assignee">\${t.done?"✓":(t.initials||"—")}</span></article>\`;
+};
+function holpOpenComplete(id){
+ const t=state.tasks.find(x=>String(x.id)===String(id));if(!t)return;
+ $("#modalTitle").textContent="Qui ha fet la tasca?";
+ $("#modalForm").innerHTML=\`<p class="modal-task-name">\${holpEsc(t.title)}</p><div class="field"><label>Feta per</label><select name="completedBy">\${state.members.map(m=>\`<option \${m.name===t.who?"selected":""}>\${holpEsc(m.name)}</option>\`).join("")}</select></div><button class="submit">Marcar com a feta</button>\`;
+ $("#modalForm").dataset.type="taskComplete";$("#modalForm").dataset.taskId=id;$("#modalBackdrop").hidden=false;
+}
+renderTasks=function(){
+ const pending=state.tasks.filter(t=>!t.done),list=state.tasks.filter(t=>taskFilter==="all"||(taskFilter==="done"?t.done:!t.done));
+ $("#todayTasks").innerHTML=pending.slice(0,3).map(taskHTML).join("")||'<p>Tot fet per avui! 🎉</p>';
+ $("#taskList").innerHTML=list.map(taskHTML).join("")||"<p>No hi ha tasques en aquesta vista.</p>";
+ $("#workload").innerHTML="";
+ $$("[data-v9-task]").forEach(b=>b.onclick=()=>{
+  const t=state.tasks.find(x=>String(x.id)===b.dataset.v9Task);
+  if(t.done){t.done=false;t.completedBy="";t.completedAt="";save();renderTasks();toast("Tasca reoberta")}
+  else holpOpenComplete(t.id);
+ });
+};
+const holpV8OpenModal=openModal;
+openModal=function(type){
+ if(type!=="task"){holpV8OpenModal(type);return}
+ $("#modalTitle").textContent="Nova tasca";
+ $("#modalForm").innerHTML=\`<div class="field"><label>Estança</label><select name="section" id="holpSection">\${Object.keys(HOLP_TASKS).map(x=>\`<option>\${x}</option>\`).join("")}</select></div><div class="field"><label>Tasca</label><select name="catalog" id="holpCatalog"></select></div><div class="field" id="holpCustom" hidden><label>Una altra tasca</label><input name="custom"></div><div class="field"><label>Qui l'ha de fer? (opcional)</label><select name="who"><option value="">Sense responsable</option>\${state.members.map(m=>\`<option>\${holpEsc(m.name)}</option>\`).join("")}</select></div><div class="field"><label>Data</label><input name="due" type="date" value="\${holpToday()}" required></div><div class="field"><label>Hora del recordatori</label><input name="notifyTime" type="time" value="09:00"><small>Només s'avisarà si hi ha un responsable assignat.</small></div><div class="field"><label>Vull que es repeteixi</label><select name="recurrence"><option>Cap</option><option>Diària</option><option>Setmanal</option><option>Cada 2 setmanes</option><option>Mensual</option></select></div><button class="submit">Desar</button>\`;
+ const section=$("#holpSection"),catalog=$("#holpCatalog"),custom=$("#holpCustom"),sync=()=>{const items=HOLP_TASKS[section.value];catalog.innerHTML=items.length?items.map(x=>\`<option>\${holpEsc(x)}</option>\`).join(""):'<option value="">Personalitzada</option>';custom.hidden=section.value!=="Altres"};section.onchange=sync;sync();
+ $("#modalForm").dataset.type="task";$("#modalBackdrop").hidden=false;
+};
+const holpV8Submit=$("#modalForm").onsubmit;
+$("#modalForm").onsubmit=e=>{
+ const type=e.currentTarget.dataset.type;
+ if(type==="taskComplete"){
+  e.preventDefault();const t=state.tasks.find(x=>String(x.id)===e.currentTarget.dataset.taskId);if(!t)return;
+  const f=new FormData(e.currentTarget);t.done=true;t.completedBy=f.get("completedBy");t.completedAt=new Date().toISOString();holpCreateNextTask(t);save();render();$("#modalBackdrop").hidden=true;toast("Tasca completada per "+t.completedBy);holpScheduleNotifications();return;
+ }
+ if(type!=="task"){holpV8Submit(e);return}
+ e.preventDefault();const f=new FormData(e.currentTarget),section=f.get("section"),title=section==="Altres"?f.get("custom")?.trim():f.get("catalog");
+ if(!title){toast("Escriu la tasca");return}
+ const who=f.get("who"),m=state.members.find(x=>x.name===who),due=f.get("due"),notifyAt=who&&f.get("notifyTime")?due+"T"+f.get("notifyTime"):"";
+ state.tasks.unshift({id:Date.now(),title,section,who,initials:m?.initials||"",done:false,recurrence:f.get("recurrence"),due,notifyAt,completedBy:"",completedAt:""});
+ save();render();$("#modalBackdrop").hidden=true;navigate("tasques");toast(who?"Tasca assignada a "+who:"Tasca afegida sense responsable");
+ if(who&&"Notification" in window&&Notification.permission==="default")Notification.requestPermission().then(()=>holpScheduleNotifications());else holpScheduleNotifications();
+};
+renderMembers=function(){
+ $("#memberList").innerHTML=state.members.map((m,i)=>\`<article class="member"><span class="avatar" style="background:\${m.color}">\${m.initials}</span><div><b>\${holpEsc(m.name)}\${i===0?" (tu)":""}</b><small>Disponible \${m.freeFrom}–\${m.freeTo}</small></div>\${i===0?"":\`<button class="member-delete" data-safe-member-delete="\${holpEsc(m.name)}">Eliminar</button>\`}</article>\`).join("");
+ $$("[data-safe-member-delete]").forEach(b=>b.onclick=()=>{const name=b.dataset.safeMemberDelete;if(!confirm(\`Eliminar \${name}? Les tasques pendents quedaran sense responsable i l'historial es conservarà.\`))return;state.members=state.members.filter(m=>m.name!==name);state.tasks=state.tasks.map(t=>t.who===name&&!t.done?{...t,who:"",initials:"",notifyAt:""}:t);state.routines=state.routines.filter(r=>r.member!==name);if(state.shopper===name)state.shopper=null;save();render();toast("Membre eliminat")});
+};
+const holpV8Render=render;
+render=function(){holpV8Render();$("#workload").hidden=true;holpScheduleNotifications()};
+render();
